@@ -242,7 +242,8 @@ function openModal({ title, subtitle = '', body, onMount, labelledBy = 'modal-ti
   const backdrop = document.createElement('div');
   backdrop.className = 'modal-backdrop';
   backdrop.innerHTML = `
-    <div class="modal ${esc(className)}" role="dialog" aria-modal="true" aria-labelledby="${esc(labelledBy)}">
+    <div class="modal ${esc(className)}" role="dialog" aria-modal="true" aria-labelledby="${esc(labelledBy)}"
+         data-lenis-prevent>
       <div class="modal-head">
         <div>
           <h2 id="${esc(labelledBy)}">${esc(title)}</h2>
@@ -260,6 +261,19 @@ function openModal({ title, subtitle = '', body, onMount, labelledBy = 'modal-ti
 
   document.body.append(backdrop);
   document.body.style.overflow = 'hidden';
+
+  /*
+    Stop the smooth scroller while a dialog is up.
+
+    `overflow: hidden` on the body does not hold Lenis: it animates the scroll
+    position directly rather than letting the browser do it, so the page kept
+    gliding along behind an open form. The menu overlay already does this —
+    dialogs were simply missed.
+
+    `data-lenis-prevent` on the panel handles the other half, letting the
+    dialog itself scroll normally while this keeps the page still.
+  */
+  lenis?.stop();
 
   const focusables = () =>
     $$('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])', modal)
@@ -297,6 +311,10 @@ function openModal({ title, subtitle = '', body, onMount, labelledBy = 'modal-ti
     document.removeEventListener('keydown', onKeydown);
     backdrop.remove();
     document.body.style.overflow = '';
+    /* Give the page its smooth scrolling back. Safe to call when the menu is
+       also open: closeMenu() starts it again too, and start() twice is a
+       no-op. */
+    lenis?.start();
     if (opener instanceof HTMLElement && document.contains(opener)) opener.focus();
     openModalCleanup = null;
   };

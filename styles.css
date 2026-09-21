@@ -182,7 +182,14 @@
 
   --z-header:    100;
   --z-menu:      110;   /* above the header, so the menu covers it */
-  --z-cursor:    200;
+  /*
+    The cursor sits ABOVE the dialogs, and that is the whole point of the
+    number. It used to be 200, below --z-modal — so the moment a dialog
+    opened, the real arrow was still hidden by `cursor: none` while the
+    custom one was painted behind the panel. The result was a form you
+    could not see the pointer in at all.
+  */
+  --z-cursor:    600;
   --z-modal:     300;
   --z-toast:     400;
   --z-editbar:   500;
@@ -1066,10 +1073,21 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
   background: rgba(10, 10, 10, 0.45);
 }
 
+/*
+  `data-lenis-prevent` is in the markup, not here, but this is the place it
+  makes sense to explain it: Lenis animates the page's scroll position itself
+  and swallows the wheel, so without that attribute a wheel over an open
+  dialog scrolled the PAGE BEHIND IT while the dialog stayed put. The
+  attribute tells Lenis to keep its hands off and let this box scroll the
+  ordinary way. See openModal() in app.js.
+*/
 .modal {
   width: min(640px, 100%);
   max-height: 85vh;
   overflow: auto;
+  /* Stops a scroll that reaches the end of this box from continuing into the
+     page underneath — the same problem from the other direction. */
+  overscroll-behavior: contain;
   padding: var(--space-2);
   border: 1px solid var(--ink);
   background: var(--page);
