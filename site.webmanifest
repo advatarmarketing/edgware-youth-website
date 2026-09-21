@@ -1,0 +1,27 @@
+{
+  "name": "Edgware Youth",
+  "short_name": "Edgware Youth",
+  "description": "A Muslim youth organisation in Edgware, north London.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F4F4F2",
+  "theme_color": "#F4F4F2",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ]
+}

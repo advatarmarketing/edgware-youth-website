@@ -1,0 +1,195 @@
+{
+  "//": "Starting content. Loaded by POST /api/seed, and used as the fallback for any key that has never been saved. Page WORDING does not live here — that lives in the markup and is overridden through /api/copy.",
+  "//settings": "Deliberately all empty. Every one of these is a media URL or a contact detail you paste in from edit mode, and every one has a designed empty state, so the site looks finished before any of it exists.",
+  "settings": {
+    "contact": {
+      "email": "",
+      "whatsappNumber": ""
+    },
+    "social": {
+      "instagram": "",
+      "tiktok": "",
+      "youtube": "",
+      "whatsapp": ""
+    },
+    "hero": {
+      "videoUrl": "",
+      "posterUrl": "",
+      "alt": ""
+    },
+    "manifesto": {
+      "revelation": "",
+      "reality": "",
+      "resolve": "",
+      "contributing": "",
+      "cultivating": "",
+      "conversation": ""
+    },
+    "films": {
+      "programmes": {
+        "videoUrl": "",
+        "posterUrl": "",
+        "alt": ""
+      },
+      "break": {
+        "videoUrl": "",
+        "posterUrl": "",
+        "alt": ""
+      }
+    },
+    "//rhythm": "The week, shown under the programme table on What We Do. Placeholders — change the days and times in edit mode.",
+    "rhythm": [
+      {
+        "day": "Monday",
+        "time": "7.00 – 8.30pm",
+        "detail": "Weekly halaqa"
+      },
+      {
+        "day": "Wednesday",
+        "time": "6.30 – 8.00pm",
+        "detail": "Sports and socials"
+      },
+      {
+        "day": "Friday",
+        "time": "6.00 – 8.00pm",
+        "detail": "Youth club"
+      },
+      {
+        "day": "Saturday",
+        "time": "Occasional",
+        "detail": "Trips, projects and talks"
+      }
+    ],
+    "//donate": "Where the Support Us buttons point. Paste your Stripe payment links and your LaunchGood campaign URL in edit mode. Any left blank simply is not shown on the page.",
+    "donate": {
+      "oneOff": "",
+      "launchgood": "",
+      "monthly": {
+        "m4": "",
+        "m5": "",
+        "m10": "",
+        "m15": "",
+        "m20": ""
+      }
+    },
+    "//shareImageUrl": "The picture shown when a link to the site is pasted into WhatsApp. Landscape, about 1200x630.",
+    "shareImageUrl": ""
+  },
+  "//events": "Three PLACEHOLDERS so the pages can be seen working — edit them or delete them. The menu counts these, the homepage picks its featured event and its cards out of them, and /events splits them into upcoming and past from the date alone. Two are dated ahead and one behind, so both groups appear.",
+  "events": [
+    {
+      "id": "event-seed-1",
+      "slug": "an-evening-with",
+      "title": "An Evening With…",
+      "category": "Talk",
+      "date": "2026-10-17",
+      "time": "After Maghrib",
+      "location": "Edgware Community Centre",
+      "summary": "A guest speaker, a short reminder, and food afterwards. Open to everyone.",
+      "body": "We are hosting an evening for the older boys and anyone else who wants to come along.\n\nThe talk runs for about forty minutes with questions afterwards, and there is food once it finishes. Bring a friend — there is no need to book, but it helps us to know numbers if you let us know you are coming.",
+      "imageUrl": "",
+      "posterUrl": "",
+      "signUpUrl": "",
+      "featured": true,
+      "published": true,
+      "imageAlt": "",
+      "posterAlt": ""
+    },
+    {
+      "id": "event-seed-2",
+      "slug": "half-term-football",
+      "title": "Half-Term Football",
+      "category": "Activity",
+      "date": "2026-10-27",
+      "time": "2–4pm",
+      "location": "Stonegrove Park",
+      "summary": "Five-a-side over half term. All ages, all abilities, nothing to pay.",
+      "body": "Teams are picked on the day, so turn up on your own or bring the whole group.\n\nBring trainers and a water bottle. If it is raining we move indoors — check the WhatsApp group on the morning.",
+      "imageUrl": "",
+      "posterUrl": "",
+      "signUpUrl": "",
+      "featured": false,
+      "published": true,
+      "imageAlt": "",
+      "posterAlt": ""
+    },
+    {
+      "id": "event-seed-3",
+      "slug": "summer-camp-2026",
+      "title": "Summer Camp 2026",
+      "category": "Trip",
+      "date": "2026-08-14",
+      "time": "Three days",
+      "location": "The Peak District",
+      "summary": "Three days away: walking, cooking badly, and a lot of talking.",
+      "body": "Our third summer camp, and the biggest one yet.\n\nThis one has been and gone — it is here so you can see what the past section looks like. Delete it once there is a real one to put in its place.",
+      "imageUrl": "",
+      "posterUrl": "",
+      "signUpUrl": "",
+      "featured": false,
+      "published": true,
+      "imageAlt": "",
+      "posterAlt": ""
+    }
+  ],
+  "//programmes": "The rows in the table on What We Do. The menu counts these too. These five are PLACEHOLDERS so the page can be seen working — edit or delete them in edit mode. Every grid on the site is designed to look right from the very first record, so there is no minimum number you need before the page reads properly.",
+  "programmes": [
+    {
+      "id": "programme-seed-1",
+      "slug": "weekly-halaqa",
+      "name": "Weekly Halaqa",
+      "type": "Weekly",
+      "description": "A circle every week: a short reminder, a discussion, and time together afterwards.",
+      "imageUrl": "",
+      "order": 1,
+      "published": true,
+      "imageAlt": ""
+    },
+    {
+      "id": "programme-seed-2",
+      "slug": "youth-talks",
+      "name": "Youth Talks",
+      "type": "Monthly",
+      "description": "A speaker once a month on something worth an evening.",
+      "imageUrl": "",
+      "order": 2,
+      "published": true,
+      "imageAlt": ""
+    },
+    {
+      "id": "programme-seed-3",
+      "slug": "camping-trip",
+      "name": "Camping Trip",
+      "type": "Annual",
+      "description": "Three days away, once a year. The one everybody remembers.",
+      "imageUrl": "",
+      "order": 3,
+      "published": true,
+      "imageAlt": ""
+    },
+    {
+      "id": "programme-seed-4",
+      "slug": "sports-socials",
+      "name": "Sports & Socials",
+      "type": "Weekly",
+      "description": "Five-a-side, table tennis, and whatever else fills the hall.",
+      "imageUrl": "",
+      "order": 4,
+      "published": true,
+      "imageAlt": ""
+    },
+    {
+      "id": "programme-seed-5",
+      "slug": "community-projects",
+      "name": "Community Projects",
+      "type": "Ongoing",
+      "description": "Food drives, litter picks, and visits to the elderly across Edgware.",
+      "imageUrl": "",
+      "order": 5,
+      "published": true,
+      "imageAlt": ""
+    }
+  ],
+  "//clips": "Short films for the Recent clips grid on the homepage. That section hides itself completely while this is empty.",
+  "clips": []
+}
