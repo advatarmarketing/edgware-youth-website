@@ -1222,6 +1222,18 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
   height: 100%;
   display: block;
 }
+
+/*
+  A slot that is NOT set to cover fits its picture inside instead.
+
+  `contain` keeps the whole picture and letterboxes whatever is left over
+  against the frame's pale background — which is what you want for a poster,
+  where the artwork is the point and trimming it loses the message. `cover`
+  fills the frame and crops, which is what you want for a photograph being
+  used as a band across a page.
+*/
+.media:not([data-fit='cover']) img,
+.media:not([data-fit='cover']) video { object-fit: contain; }
 .media[data-fit='cover'] img,
 .media[data-fit='cover'] video { object-fit: cover; }
 

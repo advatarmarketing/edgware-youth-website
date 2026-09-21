@@ -1023,11 +1023,26 @@ Top to bottom:
 
 Two things about that right-hand column:
 
-**The poster is a different picture from the hero.** A landscape photo at the
-top of the page and a square poster beside the writing are two different jobs —
-the first is a picture of the thing, the second is the thing you'd print out
-and put on a wall, or send to someone on WhatsApp. Leave the poster blank and
-nothing is missing; the hero carries the page on its own.
+**The poster is a different picture from the hero,** and the two are treated
+differently on purpose.
+
+The **hero** is a wide band across the top of the page, and it **crops** — a
+picture put there is filled into a 33:20 strip, so its top and bottom are
+trimmed. That is right for a photograph and wrong for anything with words on
+it. Use a photo here.
+
+The **poster** is the event's own graphic — the thing you'd send someone on
+WhatsApp. It sits in an upright 2:3 frame and is **never cropped**: whatever
+shape it is, the whole thing is shown, with any leftover space filled in pale
+blue like a mount. Upright is the normal shape for these and works best, but a
+square or a wide one is fine too.
+
+So: if you have an event poster with the date and the venue written on it, it
+goes in the **poster** box, not the picture box. Put it in the picture box and
+the middle third of it appears as a strip with the words sliced off.
+
+Leave the poster blank and nothing is missing; the hero carries the page on
+its own.
 
 **Nothing in that column is compulsory.** If an event has no poster and no
 sign-up link, the column does not exist and the writing runs the full width of

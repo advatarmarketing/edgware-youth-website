@@ -1876,11 +1876,34 @@ async function renderEvent(params) {
       <aside class="event-aside">
         ${event.posterUrl || state.authed ? `
         <div class="event-poster" data-reveal>
+          <!--
+            AN UPRIGHT FRAME, AND NOTHING IS EVER CROPPED.
+
+            Two decisions here, and they are separate.
+
+            The shape used to be 1:1. A real event poster is almost never
+            square — the ones people make in Canva are upright, around 2:3 —
+            so every one of them lost its sides. 2:3 is the shape posters
+            actually come in.
+
+            The picture is then fitted INSIDE that frame rather than filling
+            it, so a poster that is some other shape is letterboxed on the
+            pale blue rather than trimmed. A poster is a finished piece of
+            artwork and cropping it loses the thing it was made to say. The
+            hero above still crops, and should: that one is a photograph used
+            as a band across the page, and a band has to be a band.
+
+            The frame keeps a FIXED shape even though the picture inside it
+            might be any shape, and that is the important part: it reserves
+            its space before the picture arrives, so the page never jumps and
+            lazy loading has a real box to measure.
+          -->
           ${mediaSlot({
             url: event.posterUrl,
-            label: 'Add the square poster',
-            ratio: '1 / 1',
+            label: 'Add the poster',
+            ratio: '2 / 3',
             alt: event.posterAlt ?? '',
+            cover: false,
           })}
         </div>` : ''}
 
@@ -4726,8 +4749,8 @@ const EVENT_FIELDS = [
   },
   { name: 'imageAlt', label: 'Picture — alt text', type: 'text', hint: ALT_HINT },
   {
-    name: 'posterUrl', label: 'Poster (square)', type: 'text',
-    hint: `The square graphic you would send somebody — shown beside the sign-up button, not stretched across the top. ${IMAGE_HINT}`,
+    name: 'posterUrl', label: 'Poster', type: 'text',
+    hint: `The event's own graphic — the thing you would send somebody on WhatsApp. Shown beside the sign-up button, whole and uncropped, whatever shape it is. Upright is normal and fine. ${IMAGE_HINT}`,
   },
   { name: 'posterAlt', label: 'Poster — alt text', type: 'text', hint: ALT_HINT },
   {
