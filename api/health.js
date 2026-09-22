@@ -21,7 +21,7 @@
  * properly.
  */
 
-import { get, usingRedis, hasCredentials, forcedLocal } from '../lib/kv.js';
+import { get, usingRedis, hasCredentials, forcedLocal, credentialsVia } from '../lib/kv.js';
 import { ok, methodNotAllowed, withErrors } from '../lib/http.js';
 
 export default withErrors(async (req, res) => {
@@ -81,6 +81,8 @@ export default withErrors(async (req, res) => {
        variable exists, never what is in it. */
     hasCredentials,
     forcedLocal,
+    /* WHICH pair of variables was used. Names only — never a value. */
+    credentialsVia,
     ...(readError ? { readError } : {}),
 
     /*
