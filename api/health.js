@@ -21,7 +21,7 @@
  * properly.
  */
 
-import { get, usingRedis } from '../lib/kv.js';
+import { get, usingRedis, hasCredentials, forcedLocal } from '../lib/kv.js';
 import { ok, methodNotAllowed, withErrors } from '../lib/http.js';
 
 export default withErrors(async (req, res) => {
@@ -47,22 +47,42 @@ export default withErrors(async (req, res) => {
   const store = usingRedis ? 'redis' : 'file';
   const healthy = usingRedis ? readable : !deployed;
 
+  /*
+    "file" on a deployment has two completely different causes and they need
+    completely different fixes, so say WHICH. Reporting only the symptom sent
+    somebody hunting through the Upstash dashboard for a connection that was
+    there all along.
+  */
+  let note;
+  if (healthy) {
+    note = usingRedis
+      ? 'Connected to Redis. Saving will work.'
+      : 'Local file store — correct on your own machine.';
+  } else if (usingRedis) {
+    note = 'The database is configured but could not be read. Check the Upstash '
+      + 'dashboard, and that the integration is still connected.';
+  } else if (hasCredentials) {
+    note = 'The database credentials ARE set, but something is overriding them. '
+      + 'Check for an EY_LOCAL_STORE variable in this project and delete it — it '
+      + 'is a local-development-only switch and must never be set on Vercel. '
+      + 'Redeploy afterwards.';
+  } else {
+    note = 'NO DATABASE. The site will render, but nothing can be saved. '
+      + 'In Vercel: Storage → Create Database → Upstash for Redis, connect it '
+      + 'to this project, then REDEPLOY — environment variables only apply to '
+      + 'the next build.';
+  }
+
   return ok(res, {
     ok: healthy,
     store,
     readable,
+    /* The two facts that separate the causes. Neither is a secret: whether a
+       variable exists, never what is in it. */
+    hasCredentials,
+    forcedLocal,
     ...(readError ? { readError } : {}),
     environment: process.env.VERCEL_ENV ?? 'local',
-    note: healthy
-      ? (usingRedis
-          ? 'Connected to Redis. Saving will work.'
-          : 'Local file store — correct on your own machine.')
-      : (deployed && !usingRedis
-          ? 'NO DATABASE. The site will render, but nothing can be saved. '
-            + 'In Vercel: Storage → Create Database → Upstash for Redis, connect it '
-            + 'to this project, then REDEPLOY — environment variables only apply to '
-            + 'the next build.'
-          : 'The database is configured but could not be read. Check the Upstash '
-            + 'dashboard, and that the integration is still connected.'),
+    note,
   });
 });
