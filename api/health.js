@@ -82,6 +82,21 @@ export default withErrors(async (req, res) => {
     hasCredentials,
     forcedLocal,
     ...(readError ? { readError } : {}),
+
+    /*
+      THE NAMES of any database-ish variables this deployment can see, and
+      nothing else — never a value, never a token, and only names matching the
+      pattern below so this can never become a listing of everything.
+
+      This exists because "the dashboard says connected but the site cannot
+      see it" is otherwise unanswerable from outside: the integration may have
+      named the variables something the code does not look for, or set them
+      for the wrong environment. One glance here settles it.
+    */
+    databaseVarsPresent: Object.keys(process.env)
+      .filter((name) => /(REDIS|UPSTASH|KV_|_KV|DATABASE|STORAGE)/i.test(name))
+      .sort(),
+
     environment: process.env.VERCEL_ENV ?? 'local',
     note,
   });
