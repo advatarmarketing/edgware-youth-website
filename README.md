@@ -343,11 +343,16 @@ set, two are filled in for you, and two must be left alone.
 |---|---|---|
 | `ADMIN_PASSWORD` | **You set this** | The password for edit mode. Anyone with it can change every word and picture on the site. Make it long. |
 | `SESSION_SECRET` | **You set this** | A long random string used to sign the login cookie, so nobody can forge a session. Never share it, and never reuse it anywhere else. |
-| `KV_REST_API_URL` | Filled in for you | The database address. The Upstash integration adds it. |
-| `KV_REST_API_TOKEN` | Filled in for you | The database password. The Upstash integration adds it. |
+| `KV_REST_API_URL` | **Never add by hand** | The database address. The Upstash integration adds it when you connect a database. Adding it yourself creates an empty variable that looks connected and isn't. |
+| `KV_REST_API_TOKEN` | **Never add by hand** | The database password. Same — the integration sets it. |
 | `SITE_URL` | Optional | `https://edgwareyouth.co.uk`, no trailing slash. Only used to write the full addresses into `sitemap.xml`. Leave it out and the site works out its own address. |
 | `ALLOW_SEED` | **Leave blank** | A development-only switch that lets the starting content be reloaded. Setting it live would let somebody wipe the real content. |
 | `EY_LOCAL_STORE` | **Never set this on Vercel** | Forces the site onto a local file instead of the database. On Vercel that means every edit is forgotten. |
+
+**Is the database actually connected?** Open **`/api/health`** on the deployed
+site. It answers in one line: `"store": "redis"` and `"ok": true` means saving
+works. Anything else, and the `note` field tells you what to do about it. It is
+the first thing to check if a save ever fails.
 
 To generate `SESSION_SECRET`, run this once in a terminal and paste the result:
 
