@@ -783,7 +783,7 @@ const FILM_SLOTS = [
   always START silent — a browser will not play a film with sound until the
   visitor asks for it — and the button is how they ask. Press it again to mute.
 */
-function filmSection({ slot, film, label, overlay = '', className = '', sound = false }) {
+function filmSection({ slot, film, label, overlay = '', className = '', sound = false, aside = '' }) {
   const video = film?.videoUrl ?? '';
   const poster = film?.posterUrl ?? '';
   const alt = film?.alt ?? '';
@@ -813,6 +813,7 @@ function filmSection({ slot, film, label, overlay = '', className = '', sound = 
 
   return `
   <section class="film-section ${className}">
+    ${aside ? '<div class="film-split shell">' : ''}
     <figure class="film" data-film data-film-label="${esc(label)}"
             data-has-media="${hasMedia ? 'true' : 'false'}"
             data-has-overlay="${overlay ? 'true' : 'false'}"
@@ -832,6 +833,7 @@ function filmSection({ slot, film, label, overlay = '', className = '', sound = 
       <!-- Describes the footage to anyone who cannot watch it. -->
       ${hasMedia && alt ? `<figcaption class="visually-hidden">${esc(alt)}</figcaption>` : ''}
     </figure>
+    ${aside ? `<div class="film-aside">${aside}</div></div>` : ''}
 
     ${editOnly(`
     <div class="film-edit shell">
@@ -1434,12 +1436,33 @@ function manifestoSection(settings) {
     <div class="manifesto-track" data-manifesto-track>
       <div class="manifesto-stage" data-manifesto-stage data-active="0">
         ${MANIFESTO_RS.map(panel).join('')}
+
+        <!-- Inside the stage, because the stage is what stays pinned on screen. -->
+        <!--
+          WHERE YOU ARE, AND THAT THERE IS MORE. Only shown while the section is
+          pinned (desktop); on a phone the three words simply stack.
+            - top left: the three words as a list, the current one lit
+            - bottom right: "Keep scrolling" with a moving arrow. On the last
+              word it changes to "Next: the three Cs"
+            - along the bottom: a thin bar that fills as you scroll through
+        -->
+        <ol class="manifesto-progress" aria-hidden="true">
+          ${MANIFESTO_RS.map((pillar, index) => `
+          <li data-dot="${index}">
+            <span class="mp-num">${String(index + 1).padStart(2, '0')}</span>
+            <span class="mp-word">${esc(pillar.word)}</span>
+          </li>`).join('')}
+        </ol>
+
+        <div class="manifesto-cue" aria-hidden="true">
+          <span class="manifesto-cue-text" data-manifesto-cue>Keep scrolling</span>
+          <span class="manifesto-cue-arrow">${icon('arrowDown')}</span>
+        </div>
+
+        <div class="manifesto-bar" aria-hidden="true"><span data-manifesto-bar></span></div>
       </div>
 
-      <!-- Which word you are on. Hidden on mobile, where they simply stack. -->
-      <div class="manifesto-progress" aria-hidden="true">
-        ${MANIFESTO_RS.map((_, index) => `<span data-dot="${index}"></span>`).join('')}
-      </div>
+
     </div>
 
     <!-- The 3 Cs: three cards side by side, a sideways swipe on a phone. -->
@@ -1543,6 +1566,17 @@ async function renderHome() {
       label: 'Add the homepage film',
       className: 'film-section--compact',
       sound: true,
+      /* Words beside the film, so a square clip sits in a two-column layout
+         instead of floating alone in the middle of the page. */
+      aside: `
+        <p class="label" data-reveal="text" data-copy="home.film.label">Watch</p>
+        <h2 class="display-3 film-aside-title" data-reveal="text" data-copy="home.film.title">From the talks</h2>
+        <p class="prose film-aside-line" data-reveal="text" data-copy="home.film.line">
+          A minute from one of our Saturday evening talks. Press the speaker to listen.
+        </p>
+        <p data-reveal="text">
+          <a class="link-arrow" href="/events"><span data-copy="home.film.link">See what's on</span>${icon('arrowRight')}</a>
+        </p>`,
     })}
     ${whatWeDoSection()}
     ${supportSection()}
@@ -3801,6 +3835,21 @@ function mountFilms() {
     const poster = video.getAttribute('poster');
 
     /*
+      Films in the compact layout take their OWN shape — square, portrait or
+      wide — instead of being cropped to the fixed 33:20 frame, so nothing
+      (subtitles, faces) is cut off. The shape is read from the file itself.
+    */
+    if (figure.closest('.film-section--compact')) {
+      const fit = () => {
+        if (video.videoWidth && video.videoHeight) {
+          figure.style.aspectRatio = `${video.videoWidth} / ${video.videoHeight}`;
+        }
+      };
+      if (video.readyState >= 1) fit();
+      else video.addEventListener('loadedmetadata', fit, { once: true });
+    }
+
+    /*
       The sound button, on the films that have one. It flips the film between
       muted and not, and swaps its own icon and spoken label to match. If the
       film was paused (it pauses whenever it is off screen) it starts again,
@@ -4106,7 +4155,9 @@ function mountManifesto() {
   const track = $('[data-manifesto-track]', app);
   if (!section || !stage || !track) return;
 
-  const dots = $$('.manifesto-progress span', section);
+  const dots = $$('.manifesto-progress [data-dot]', section);
+  const cue = $('[data-manifesto-cue]', section);
+  const bar = $('[data-manifesto-bar]', section);
 
   /**
    * Light the right word, and the right dot. Cheap enough to call every frame.
@@ -4120,6 +4171,8 @@ function mountManifesto() {
     if (!force && stage.dataset.active === String(clamped)) return;
     stage.dataset.active = String(clamped);
     dots.forEach((dot, i) => { dot.dataset.on = String(i === clamped); });
+    /* On the last word, say what comes next instead. */
+    if (cue) cue.textContent = clamped === MANIFESTO_RS.length - 1 ? 'Next: the three Cs' : 'Keep scrolling';
   };
 
   setActive(0, { force: true });
@@ -4159,6 +4212,7 @@ function mountManifesto() {
           from landing one past the end.
         */
         setActive(Math.floor(Math.min(self.progress, 0.999) * MANIFESTO_RS.length));
+        if (bar) bar.style.transform = `scaleX(${self.progress.toFixed(4)})`;
       },
     });
 

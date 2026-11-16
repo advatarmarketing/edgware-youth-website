@@ -834,11 +834,18 @@ scroll past. Same again for anyone who has asked for reduced motion.
 Each word, each line underneath it, and each background image is separately
 editable.
 
-**6. The homepage film** — under the three Cs. A smaller, centred frame (720px
-wide at most) rather than the whole width of the screen. It plays silently;
-the round speaker button in its bottom-right corner turns the sound on, and
-pressing it again turns it off. To make the film bigger or smaller, change
-`max-width` under `.film-section--compact` in `styles.css`.
+**6. The homepage film** — under the three Cs, in two columns: the film on
+the left, and on the right a short heading, a line and a link ("Watch / From
+the talks" — placeholder wording, click to rewrite it in edit mode). The film
+keeps its OWN shape — a square clip shows square, a portrait one portrait —
+so nothing like subtitles or faces is cropped off. It plays silently; the
+round speaker button turns the sound on and off. On a phone the words sit
+under the film.
+
+**While the three Rs are pinned** (desktop), three things say there is more
+to come: the three words listed top left with the current one lit, a "Keep
+scrolling" box with a moving arrow bottom right (it says "Next: the three Cs"
+on the last word), and a thin bar along the bottom that fills as you scroll.
 
 **7. What we do** — a short teaser pointing at the full page.
 

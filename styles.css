@@ -1357,6 +1357,24 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
 .film-section--compact .film {
   max-width: 720px;
   margin-inline: auto;
+  /* Square until the video says otherwise (app.js sets its real shape). */
+  aspect-ratio: 1 / 1;
+}
+
+/* Film on the left, the words on the right; stacked on a phone. */
+.film-section--compact:has(.film-split) { padding-inline: 0; }
+.film-split {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: var(--space-3);
+  align-items: center;
+}
+.film-split .film { max-width: 560px; width: 100%; margin: 0; justify-self: end; }
+.film-aside { display: grid; gap: var(--space-1); justify-items: start; max-width: 36rem; }
+.film-aside-line { max-width: 40ch; color: var(--ink-70); }
+@media (max-width: 860px) {
+  .film-split { grid-template-columns: minmax(0, 1fr); gap: var(--space-2); }
+  .film-split .film { justify-self: stretch; max-width: none; }
 }
 
 /* The speaker button in the corner of a film with sound. */
@@ -1935,24 +1953,82 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
     visibility 0s linear 0s;
 }
 
-/* Which word you are on. */
+/* Which word you are on: the three words, top left, the current one lit. */
 .manifesto-progress {
   position: absolute;
   left: var(--gutter);
-  top: 50%;
-  transform: translateY(-50%);
+  top: calc(var(--unit) + var(--space-2));   /* clear of the header */
   z-index: 2;
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: grid;
+  gap: 8px;
+  color: var(--on-brand);
+  pointer-events: none;
+}
+.manifesto-progress li {
+  display: flex;
+  align-items: baseline;
   gap: 10px;
+  font-size: var(--small);
+  font-weight: var(--weight-medium);
+  text-transform: uppercase;
+  letter-spacing: var(--track-label);
+  opacity: 0.4;
+  transition: opacity 0.6s var(--ease-ref), transform 0.6s var(--ease-ref);
 }
-.manifesto-progress span {
-  width: 2px;
-  height: 22px;
+.manifesto-progress li[data-on='true'] { opacity: 1; transform: translateX(6px); }
+.mp-num { font-size: var(--label); }
+
+/* "Keep scrolling", bottom right, with an arrow that nudges downwards. */
+.manifesto-cue {
+  position: absolute;
+  right: var(--gutter);
+  bottom: var(--space-2);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border: 1px solid rgba(244, 244, 242, 0.5);
+  color: var(--on-brand);
+  font-size: var(--small);
+  font-weight: var(--weight-medium);
+  text-transform: uppercase;
+  letter-spacing: var(--track-label);
+  pointer-events: none;
+}
+.manifesto-cue-arrow { display: grid; animation: manifesto-nudge 1.6s var(--ease-ref) infinite; }
+.manifesto-cue-arrow .icon { width: 16px; height: 16px; }
+@keyframes manifesto-nudge {
+  0%, 100% { transform: translateY(-3px); }
+  50%      { transform: translateY(4px); }
+}
+
+/* The progress bar along the very bottom of the pinned screen. */
+.manifesto-bar {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 4px;
+  z-index: 2;
+  background: rgba(244, 244, 242, 0.18);
+  pointer-events: none;
+}
+.manifesto-bar span {
+  position: absolute;
+  inset: 0;
   background: var(--on-brand);
-  opacity: 0.3;
-  transition: opacity 0.6s var(--ease-ref);
+  transform: scaleX(0);
+  transform-origin: left;
 }
-.manifesto-progress span[data-on='true'] { opacity: 1; }
+
+/* None of the three exist outside the pinned (desktop) mode. */
+.manifesto:not([data-mode='pinned']) .manifesto-progress,
+.manifesto:not([data-mode='pinned']) .manifesto-cue,
+.manifesto:not([data-mode='pinned']) .manifesto-bar { display: none; }
+
+@media (prefers-reduced-motion: reduce) { .manifesto-cue-arrow { animation: none; } }
 
 .manifesto[data-mode='stacked'] .manifesto-progress { display: none; }
 
