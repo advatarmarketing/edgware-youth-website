@@ -1136,6 +1136,21 @@ it in two places, so you only ever change a time once:
   today, so the first thing someone sees is what's on tonight.
 * **What We Do → "The week"** — the short version: day, time, name and who it
   is for.
+* **Homepage → "Our weekly programmes"**, straight under "Most recently" — a
+  timetable of rows (day, time, programme, where). Each row links to the full
+  week on the Events page.
+
+**Starting list** (times and most places are placeholders — "time TBC",
+"Location TBC" — fill them in from *Manage the week*):
+Wednesday evening, Run + Calisthenics Club · Thursday evening, Brazilian Jiu
+Jitsu at S2One, Queensbury · Thursday evening, Weekly Football · Friday
+evening, Graham Park Halaqah · Saturday morning, Fajr Run Club · Saturday
+evening, The Edgware Youth Talk.
+
+The same six are also rows in the **programme table on What We Do** (Manage
+programmes), each with a placeholder description. That table is a separate
+list — it is where each programme gets its picture and description — so a
+new weekly session wants adding in both places.
 
 **To change it:** log in, go to Events, press **Manage the week**. Each session
 has: what it is, the day (pick from the list), the time (any wording — "7.00 –

@@ -3162,3 +3162,74 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
   .tl-card { transform: none; transition: none; }
   .tl-item[data-phase='Present'] .tl-dot::after { animation: none; }
 }
+
+
+/* ================================================ Homepage: every week ==== */
+
+/*
+  A timetable of rows under "Most recently". Desktop: day | time | name |
+  where | arrow, on one line, with a rule between rows. The row goes blue on
+  hover. Phone: day and time on the first line, the name large, where under.
+*/
+.home-week-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+}
+
+.hw-list { list-style: none; padding: 0; margin: 0; border-top: 1px solid var(--ink); }
+.hw-row { border-bottom: 1px solid var(--hairline); }
+
+.hw-link {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(0, 2fr) minmax(0, 4fr) minmax(0, 2.4fr) 24px;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) 0;
+  transition: background var(--dur-fast) var(--ease-ref), padding var(--dur-fast) var(--ease-ref);
+}
+.hw-link:hover { background: var(--accent-soft); padding-inline: var(--space-1); }
+
+.hw-day {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--heading);
+  font-weight: var(--weight-medium);
+  text-transform: uppercase;
+}
+.hw-time { font-size: var(--small); color: var(--accent-on-wash); font-weight: var(--weight-medium); }
+.hw-title {
+  font-size: var(--display-4);
+  font-weight: var(--weight-medium);
+  line-height: var(--line-head);
+  text-transform: uppercase;
+}
+.hw-where { font-size: var(--small); color: var(--ink-70); }
+/* A second session on the same day: the day name is not repeated (it is still
+   there for screen readers), like a printed timetable. Phones repeat it. */
+@media (min-width: 861px) {
+  .hw-row[data-same-day='true'] .hw-day { visibility: hidden; }
+}
+.hw-arrow { justify-self: end; transition: transform var(--dur-fast) var(--ease-ref); }
+.hw-link:hover .hw-arrow { transform: translateX(4px); }
+
+@media (max-width: 860px) {
+  .hw-link {
+    grid-template-columns: minmax(0, 1fr) 24px;
+    grid-template-areas:
+      "day   arrow"
+      "title arrow"
+      "where arrow";
+    gap: 6px var(--space-1);
+    padding: var(--space-1) 0;
+  }
+  .hw-day   { grid-area: day; font-size: var(--small); }
+  .hw-time  { grid-area: day; justify-self: end; }
+  .hw-title { grid-area: title; }
+  .hw-where { grid-area: where; }
+  .hw-arrow { grid-area: arrow; align-self: center; }
+}

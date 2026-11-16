@@ -1090,6 +1090,56 @@ function heroSection(settings) {
 }
 
 
+/* ------------------------------------------------------------- This week --- */
+
+/*
+  EVERY WEEK, on the homepage — straight under "Most recently".
+
+  The same list as the Events page timetable and What We Do (Manage the
+  week), shown as a plain timetable: one row per session, the day large on
+  the left, then the time, the name and where. Today's row is marked. The
+  whole row links to the full week on the Events page.
+*/
+function homeWeekSection(items) {
+  const week = sortedWeek(items);
+  if (!week.length && !state.authed) return '';
+  const today = todayName();
+
+  const row = (item, index) => `
+    <li class="hw-row" data-reveal="text" style="--i:${index}" data-today="${item.day === today}"
+        data-same-day="${index > 0 && week[index - 1].day === item.day}">
+      <a class="hw-link" href="/events#every-week">
+        <span class="hw-day">${esc(item.day)}${item.day === today ? '<span class="week-today">Today</span>' : ''}</span>
+        <span class="hw-time">${esc(item.time)}</span>
+        <span class="hw-title">${esc(item.title)}</span>
+        <span class="hw-where">${esc(item.location)}</span>
+        <span class="hw-arrow" aria-hidden="true">${icon('arrowRight')}</span>
+      </a>
+    </li>`;
+
+  return `
+  <section class="section shell home-week" aria-labelledby="home-week-title">
+    <div class="home-week-head">
+      <div>
+        <p class="label" data-reveal="text" data-copy="home.week.label">Every week</p>
+        <h2 class="display-3" id="home-week-title" data-reveal="text" data-copy="home.week.title">Our weekly programmes</h2>
+      </div>
+      <a class="link-arrow" href="/events#every-week" data-reveal="text">
+        <span data-copy="home.week.link">See the full week</span>${icon('arrowRight')}
+      </a>
+    </div>
+
+    ${editOnly(`<div style="margin-bottom:var(--space-2)">
+      <button type="button" class="edit-chip" data-edit="weekly">${icon('pencil')} Manage the week</button>
+    </div>`)}
+
+    ${week.length
+      ? `<ol class="hw-list">${week.map(row).join('')}</ol>`
+      : emptyState('Nothing in the week yet', 'Add each weekly session from "Manage the week".')}
+  </section>`;
+}
+
+
 /* -------------------------------------------------------- Featured event --- */
 
 function featuredEventSection({ upcoming, past }) {
@@ -1469,10 +1519,11 @@ async function renderHome() {
     on every navigation afterwards. Neither is allowed to break the page: a
     failed request gives empty defaults, and every section has an empty state.
   */
-  const [settings, events, clips] = await Promise.all([
+  const [settings, events, clips, weekly] = await Promise.all([
     load('settings').catch(() => ({})),
     load('events').catch(() => []),
     load('clips').catch(() => []),
+    load('weekly').catch(() => []),
   ]);
 
   const sorted = sortEvents(events);
@@ -1482,6 +1533,7 @@ async function renderHome() {
   <main id="main" class="page page--home">
     ${heroSection(site)}
     ${featuredEventSection(sorted)}
+    ${homeWeekSection(weekly)}
     ${upcomingSection(sorted)}
     ${clipsSection(clips)}
     ${manifestoSection(site)}
