@@ -437,7 +437,17 @@ button {
   padding: 10px 4px;
   transition: color 0.3s var(--ease-ref);
 }
-.menu-trigger:hover { color: var(--accent); }
+/* On hover the word keeps its colour and gains an underline. It used to turn
+   blue — which made it vanish under the blue cursor, and vanish entirely over
+   the blue banner at the top of Support Us. */
+.menu-trigger {
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 5px;
+  text-decoration-thickness: 1px;
+  transition: text-decoration-color 0.3s var(--ease-ref);
+}
+.menu-trigger:hover { text-decoration-color: currentColor; }
 
 /* Support Us: the one place a solid fill appears in the bar. */
 .header-cta {
@@ -848,11 +858,23 @@ html.lenis body { height: auto; }
   transform: translate3d(-100px, -100px, 0) scale(1);
   will-change: transform;
   transition: background var(--dur-fast) var(--ease-ref),
+              box-shadow var(--dur-fast) var(--ease-ref),
               opacity var(--dur-fast) var(--ease-ref);
 }
 
 /* Over a dark area — anything carrying data-cursor="invert" — it turns white. */
 .cursor[data-invert='true'] { background: #FFFFFF; }
+
+/*
+  Over the Menu button (anything with data-cursor-ring) it becomes a hollow
+  ring, so the word underneath stays readable. The border is 1px BEFORE the
+  2.5x grow, so it lands as a crisp ~2.5px line once grown.
+*/
+.cursor[data-ring='true'] {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.cursor[data-ring='true'][data-invert='true'] { box-shadow: inset 0 0 0 1px #FFFFFF; }
 
 /* Hidden until the pointer has actually moved, so it doesn't sit in the
    top-left corner on load. */
@@ -1308,6 +1330,39 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
 }
 
 .film-section { margin-block: var(--space-4); }
+
+/*
+  The homepage film, after the 3 Cs: a contained frame in the middle of the
+  page rather than a full-width wall of footage. Change max-width to make it
+  bigger or smaller.
+*/
+.film-section--compact {
+  padding-inline: var(--gutter);
+  margin-block: var(--space-3) var(--space-4);
+}
+.film-section--compact .film {
+  max-width: 720px;
+  margin-inline: auto;
+}
+
+/* The speaker button in the corner of a film with sound. */
+.film-sound {
+  position: absolute;
+  right: var(--space-1);
+  bottom: var(--space-1);
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(10, 10, 10, 0.55);
+  color: #FFFFFF;
+  transition: background var(--dur-fast) var(--ease-ref);
+}
+.film-sound:hover { background: rgba(10, 10, 10, 0.8); }
+.film-sound .icon { width: 20px; height: 20px; }
 
 .film {
   position: relative;
@@ -1822,10 +1877,7 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
 /* The word whose turn it is. */
 .manifesto[data-mode='pinned'] .manifesto-stage[data-active='0'] .pillar[data-index='0'],
 .manifesto[data-mode='pinned'] .manifesto-stage[data-active='1'] .pillar[data-index='1'],
-.manifesto[data-mode='pinned'] .manifesto-stage[data-active='2'] .pillar[data-index='2'],
-.manifesto[data-mode='pinned'] .manifesto-stage[data-active='3'] .pillar[data-index='3'],
-.manifesto[data-mode='pinned'] .manifesto-stage[data-active='4'] .pillar[data-index='4'],
-.manifesto[data-mode='pinned'] .manifesto-stage[data-active='5'] .pillar[data-index='5'] {
+.manifesto[data-mode='pinned'] .manifesto-stage[data-active='2'] .pillar[data-index='2'] {
   opacity: 1;
   visibility: visible;
   transition:
@@ -1870,6 +1922,97 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
 .manifesto:not([data-mode]) .pillar { position: absolute; inset: 0; opacity: 0; }
 .manifesto:not([data-mode]) .pillar[data-index='0'] { opacity: 1; }
 .manifesto:not([data-mode]) .manifesto-stage { position: relative; height: 100dvh; }
+
+
+/* --- the 3 Cs: three cards, not three more screens ---------------------------
+   The Rs above are full-screen colour, one at a time. The Cs are the opposite
+   on purpose: light page, three at once, picture on top and words beneath —
+   so the scroll visibly changes shape halfway through the six.
+   ------------------------------------------------------------------------ */
+
+.cs { padding-block: var(--space-4) var(--space-3); }
+
+.cs-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+/* Only shown on a phone, where the row scrolls sideways. */
+.cs-swipe { display: none; align-items: center; gap: 6px; color: var(--ink-60); }
+.cs-swipe .icon { width: 14px; height: 14px; }
+
+.cs-row {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.c-card { display: flex; flex-direction: column; }
+
+.c-card-media {
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--brand);
+}
+.c-card-media-inner { width: 100%; height: 100%; border: 0; }
+.c-card-media img,
+.c-card-media video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--dur-base) var(--ease-ref);
+}
+@media (hover: hover) {
+  .c-card:hover .c-card-media img,
+  .c-card:hover .c-card-media video { transform: scale(1.04); }
+}
+
+/* No picture set: the brand blue with the card's number set large in it. */
+.c-card-plain {
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  padding: var(--space-1) var(--space-2);
+  color: var(--on-brand);
+}
+.c-card-plain span {
+  font-size: var(--display-2);
+  font-weight: var(--weight-medium);
+  line-height: var(--line-head);
+  opacity: 0.35;
+}
+
+.c-card-index { margin-top: var(--space-2); }
+.c-card-word { margin-top: var(--space-1); text-transform: uppercase; }
+.c-card-index + .c-card-word { margin-top: 8px; }
+.c-card-line { margin-top: 8px; color: var(--ink-70); }
+
+/* Phones: the three cards become a row you swipe sideways, each one most of
+   the screen wide so the next one peeks in and says "there is more". */
+@media (max-width: 767px) {
+  .cs-swipe { display: inline-flex; }
+  .cs-row {
+    display: flex;
+    gap: var(--space-1);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    /* Bleed to the screen edges, so cards slide off the side rather than
+       being clipped at the gutter. */
+    margin-inline: calc(var(--gutter) * -1);
+    padding-inline: var(--gutter);
+    scroll-padding-inline: var(--gutter);
+  }
+  .cs-row::-webkit-scrollbar { display: none; }
+  .c-card { flex: 0 0 78%; scroll-snap-align: start; }
+}
 
 
 /* ---- 6. Full-width film -------------------------------------------------
@@ -2523,91 +2666,64 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
   font-size: var(--body);
 }
 
-/* ---- The monthly ladder -------------------------------------------------- */
+/* ---- The donation cards --------------------------------------------------- */
 
-.tier-grid {
+/*
+  One-time first, then the monthly amounts — solid blue cards with the amount
+  and a "Donate Now" button, laid out like the old site's Support Us page.
+
+  Flex and centred rather than a grid, so whatever is left over on the last
+  line sits in the MIDDLE (six cards on a wide screen: five, then one centred).
+*/
+.donate-grid {
   list-style: none;
   padding: 0;
-  margin-top: var(--space-2);
-  display: grid;
-  grid-template-columns: repeat(var(--cols, 5), minmax(0, 1fr));
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: var(--space-1);
 }
 
-/* A column rather than a grid, so `margin-top: auto` on the button can push
-   it to the bottom — which is what keeps five buttons on one line with each
-   other when one card's amount wraps and another's doesn't. */
-.tier {
+.donate-card {
+  flex: 0 1 calc((100% - 4 * var(--space-1)) / 5);
+  min-width: 200px;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  min-height: 180px;
-  border: 1px solid var(--hairline);
-  padding: var(--space-2) var(--space-1) var(--space-1);
-}
-.tier:hover { border-color: var(--ink); background: var(--accent-soft); }
-
-/*
-  WATCH OUT FOR THIS ONE — it is the sort of thing that looks like the reveal
-  is broken when it is really the hover that broke it.
-
-  `transition` is a shorthand: whichever rule wins REPLACES the whole list, it
-  does not add to it. A card is both a reveal target (which transitions its
-  opacity and its transform, with the stagger in the delay) and a hover target
-  (which transitions its border and its background). Declaring the hover pair
-  on a bare `.tier` would throw the reveal pair away, and the cards would snap
-  into place instead of fading up.
-
-  So both pairs are declared together, on a selector specific enough to beat
-  `[data-reveal='text']` in part 4. If you add a hover transition to anything
-  else that carries data-reveal, do the same thing.
-*/
-.tier[data-reveal] {
-  transition:
-    border-color var(--dur-fast) var(--ease-ref),
-    background   var(--dur-fast) var(--ease-ref),
-    opacity   var(--dur-base) var(--ease-ref) calc(var(--reveal-delay) + (var(--i, 0) * var(--reveal-delay))),
-    transform var(--dur-base) var(--ease-ref) calc(var(--reveal-delay) + (var(--i, 0) * var(--reveal-delay)));
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-1);
+  background: var(--brand);
+  color: var(--on-brand);
+  text-align: center;
 }
 
-/* An amount with no link yet. Only ever rendered in edit mode — a visitor is
-   shown a shorter ladder rather than a card that does nothing. */
-.tier[data-unset] {
-  border-style: dashed;
-  border-color: var(--accent);
-}
-.tier[data-unset]:hover { background: none; border-color: var(--accent); }
-
-.tier-amount {
-  font-size: var(--display-4);
+.donate-card-title {
+  font-size: var(--heading);
   font-weight: var(--weight-medium);
   line-height: var(--line-head);
-  letter-spacing: var(--track-head);
 }
 
-.tier-period {
-  font-size: var(--micro);
-  color: var(--ink-60);
-  margin-bottom: var(--space-1);
+.donate-card-btn { margin-top: auto; white-space: nowrap; }
+
+/* A card with no link yet. Only ever rendered in edit mode. */
+.donate-card[data-unset] {
+  background: none;
+  color: var(--ink);
+  border: 1px dashed var(--accent);
 }
 
-/* Buttons in the ladder fill their card, so five of them read as one row of
-   equal choices rather than five loose words. */
-.tier-btn { width: 100%; margin-top: auto; }
+/* ---- LaunchGood ------------------------------------------------------------ */
 
-/* ---- LaunchGood ---------------------------------------------------------- */
-
-/* Set apart in a panel, because it is somebody else's platform rather than
-   another amount on the same ladder. */
-.support-panel {
-  border: 1px solid var(--hairline);
-  background: var(--accent-soft);
-  padding: var(--space-2);
+.support-launchgood { text-align: center; padding-top: 0; }
+.support-launchgood .display-4 { margin-bottom: var(--space-1); }
+.support-launchgood-link {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color var(--dur-fast) var(--ease-ref);
 }
-.support-panel .prose { max-width: 52ch; }
-/* Blue label on the blue wash — see --accent-on-wash. */
-.support-panel .label { color: var(--accent-on-wash); }
+.support-launchgood-link:hover { color: var(--accent-hover); }
 
 /* ---- The small print ----------------------------------------------------- */
 
@@ -2650,21 +2766,14 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
 /* ---- Narrower screens ------------------------------------------------------ */
 
 @media (max-width: 1000px) {
-  /* Five amounts across stop being readable well before the phone breakpoint;
-     [data-count] matches the specificity of the phone rule below. */
-  .tier-grid[data-count] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Three cards a row on tablets (six cards = two tidy rows of three). */
+  .donate-card { flex-basis: calc((100% - 2 * var(--space-1)) / 3); min-width: 0; }
   .ways-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 600px) {
-  .tier-grid[data-count] { grid-template-columns: minmax(0, 1fr); }
+  /* Two cards a row on phones. */
+  .donate-card { flex-basis: calc((100% - var(--space-1)) / 2); padding-inline: 10px; }
+  .donate-card-btn { padding: 0 14px; gap: 6px; font-size: var(--micro); }
   .ways-grid { grid-template-columns: minmax(0, 1fr); }
-
-  /*
-    One card per row, so there is nothing to line the buttons up WITH — and
-    the min-height that keeps five buttons level on a desktop just opens a
-    dead gap between "a month" and the button on a phone. Both go.
-  */
-  .tier { min-height: 0; }
-  .tier-btn { margin-top: var(--space-1); }
 }

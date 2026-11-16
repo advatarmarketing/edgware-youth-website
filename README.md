@@ -119,9 +119,13 @@ under *Payment links*, and they look like `https://buy.stripe.com/…`. The five
 monthly ones should be recurring links. Paste the whole address, including the
 `https://`.
 
-**An empty box hides its button.** Three of the five monthly amounts filled in
-means three cards on the page, filling the row, with no gap where the other two
-would be. Nothing on this site ever shows a button that goes nowhere.
+**An empty box hides its card.** Three of the five monthly amounts filled in
+means those three cards (plus the one-time card, if it has a link), centred on
+the page. Nothing on this site ever shows a button that goes nowhere.
+
+**LaunchGood is already set.** With that box empty the page uses
+`https://www.launchgood.com/edgwareyouth`. Paste a different address in the
+box only if the campaign moves.
 
 No card details are ever typed into this website and no Stripe keys are stored
 in it. A donate button is a link; Stripe does the rest on its own page.
@@ -807,24 +811,34 @@ still with a play mark over it, and the film only loads when somebody asks for
 it. A grid with the same 64px gap, not a carousel. **While there are no clips,
 the section is not on the site at all.**
 
-**5. Manifesto** — the three Rs and three Cs. On a desktop this section
-**pins**: it sticks to the screen and each of the six words takes over in turn
-as you keep scrolling, crossfading over 0.6s. Six words means the page scrolls
-six screens while nothing appears to move except the words.
+**5. Manifesto** — the three Rs and three Cs, shown two different ways so the
+scroll does not feel like the same thing six times over.
+
+*The three Rs* (Revelation, Reality, Resolve). On a desktop this part **pins**:
+it sticks to the screen and each word takes over in turn as you keep
+scrolling, crossfading over 0.6s.
+
+*The three Cs* (Contributing, Cultivating, Conversation). Three cards side by
+side on the light page — a picture on top, the number, the word and its line
+underneath. With no picture set, the card is plain blue with its number in it.
+On a phone the three cards become a row you swipe sideways.
 
 GSAP's ScrollTrigger does the pinning and tells the page which word it is on.
 The crossfade itself is an ordinary CSS transition, so it runs on exactly the
 same signature curve as everything else rather than on GSAP's own easing.
 
-On a phone none of that happens — pinning on a touch screen fights the scroll
-and leaves people stuck — so the same six words become six stacked panels you
-simply scroll past. Same again for anyone who has asked for reduced motion.
+On a phone the Rs do not pin — pinning on a touch screen fights the scroll
+and leaves people stuck — so they become three stacked panels you simply
+scroll past. Same again for anyone who has asked for reduced motion.
 
 Each word, each line underneath it, and each background image is separately
 editable.
 
-**6. Full-width film** — the break between the manifesto and the support band.
-See **The full-width films** below.
+**6. The homepage film** — under the three Cs. A smaller, centred frame (720px
+wide at most) rather than the whole width of the screen. It plays silently;
+the round speaker button in its bottom-right corner turns the sound on, and
+pressing it again turns it off. To make the film bigger or smaller, change
+`max-width` under `.film-section--compact` in `styles.css`.
 
 **7. What we do** — a short teaser pointing at the full page.
 
@@ -876,8 +890,9 @@ There are two of them, both edited from the chip beside them:
 
 * **Behind the programmes heading** on What We Do. Darkened automatically so
   the heading over it stays readable.
-* **The break on the homepage**, between the manifesto and the support band.
-  Nothing sits on top of this one, so the footage is shown as it is.
+* **The homepage film**, under the three Cs. This one is smaller than the
+  others — a centred frame rather than full width — and has a speaker button
+  for sound. Nothing sits on top of it, so the footage is shown as it is.
 
 Each takes three things: the film, a **poster image**, and a line describing
 what the footage shows for anyone using a screen reader.
@@ -1131,16 +1146,19 @@ leak.
 
 ### The page, top to bottom
 
-1. **The hero band**, in the accent blue. This is the single place on the
-   whole site where the small-text blue is used as a large fill.
-2. **The intention** — a reminder to make one, and then the hadith
-   "Actions are according to intentions, and everyone will get what was
-   intended" (Bukhari & Muslim), set large as a pull quote.
-3. **One-time** — one prominent button.
-4. **Monthly** — five amounts: £4, £5, £10, £15 and £20, each its own card
-   with its own button.
-5. **LaunchGood** — set apart in its own panel, because it is somebody else's
-   platform rather than another amount on the same ladder.
+Laid out like the old WordPress Support Us page.
+
+1. **The hero band**, in the accent blue — "Support us" and "Below are
+   different ways to support the work we do."
+2. **The intention** — "Remember to make a good intention before donating!",
+   then the hadith "Actions are according to intentions, and everyone will
+   get what was intended" (Related by Bukhari & Muslim), set large.
+3. **The donation cards** — solid blue cards, each with a "Donate Now" button:
+   One-time donation, then £4, £5, £10, £15 and £20 monthly. On a wide screen
+   that is five on the first row and one centred underneath; three a row on a
+   tablet; two a row on a phone.
+4. **"Donate to our LaunchGood campaign!"** with the link
+   LaunchGood.com/edgwareyouth underneath. Always shown.
 6. **The small print** about our status — see below.
 7. **Other ways to help** — volunteering, a venue, equipment, sponsoring an
    event. All four are editable text.
@@ -1160,14 +1178,14 @@ address including the `https://`.
 
 | What is set | What a visitor sees |
 |---|---|
-| Three of the five monthly amounts | Three cards, filling the row — no gap where the other two would be |
-| No one-time link | No One-time section at all |
-| No LaunchGood link | No LaunchGood panel |
-| Nothing at all | The heading, the intention, the hadith and the other ways to help |
+| Three of the five monthly amounts | Three monthly cards, centred — no gap where the other two would be |
+| No one-time link | No One-time donation card |
+| No LaunchGood link | The built-in one, LaunchGood.com/edgwareyouth |
+| No Stripe links at all | The heading, the intention, the hadith, LaunchGood and the other ways to help |
 
 A button that goes nowhere is worse than no button, so there is never one.
 
-In **edit mode** you see all five amounts whatever is set, with a note on each
+In **edit mode** you see all six cards whatever is set, with a note on each
 empty one saying it is hidden from visitors — so you can see at a glance what
 is still to be filled in. Visitors never see those notes.
 
@@ -1284,7 +1302,7 @@ to get there, and both are worth not undoing:
 * **The caption grey.** It was 45% black, which measured 3.10:1 — and it is the
   colour the *smallest* text on the site is set in, so it was the worst place
   to be short. It is now 60%, at 5.07:1. The token is `--ink-60`.
-* **Blue text on the pale blue wash** (the LaunchGood panel, the "add a
+* **Blue text on the pale blue wash** (the "add a
   picture" placeholders) measured 4.15:1, because the wash is blue too and eats
   most of the difference. Those use `--accent-on-wash`, the deeper blue, at
   6.31:1.

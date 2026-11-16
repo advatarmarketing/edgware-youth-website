@@ -124,6 +124,8 @@ const ICONS = {
   arrowUp:    '<path d="M12 20V4M6 10l6-6 6 6"/>',
   arrowDown:  '<path d="M12 4v16M6 14l6 6 6-6"/>',
   search:     '<circle cx="11" cy="11" r="6"/><path d="M15.5 15.5L21 21"/>',
+  soundOff:   '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/>',
+  soundOn:    '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>',
 };
 
 /**
@@ -464,7 +466,7 @@ function headerFragment() {
 
       <div class="header-actions">
         <a class="header-cta" href="/support" data-copy="header.support">Support Us</a>
-        <button type="button" class="menu-trigger" data-menu-open
+        <button type="button" class="menu-trigger" data-menu-open data-cursor-ring
                 aria-expanded="false" aria-controls="menu" data-copy="header.menu">Menu</button>
       </div>
     </div>
@@ -674,6 +676,18 @@ const MANIFESTO = [
   { key: 'conversation', word: 'Conversation', line: 'Shaping it.' },
 ];
 
+/*
+  The six split into their two halves, because they are SHOWN two different
+  ways. The 3 Rs take over the whole screen one at a time; the 3 Cs sit side by
+  side as three cards. Six full-screen panels in a row made the scroll feel
+  like the same thing six times over — the change of shape halfway through is
+  the point.
+
+  The split is by position: the first three are the Rs, the last three the Cs.
+*/
+const MANIFESTO_RS = MANIFESTO.slice(0, 3);
+const MANIFESTO_CS = MANIFESTO.slice(3);
+
 
 /* ------------------------------------------------------------ Media slot --- */
 
@@ -752,12 +766,17 @@ const FILM_SLOTS = [
   },
   {
     key: 'break',
-    title: 'Full-width film on the homepage',
-    subtitle: 'The break between the manifesto and the support band. Nothing sits on top of this one, so it is shown as it is.',
+    title: 'Film on the homepage',
+    subtitle: 'The smaller film under the three Cs on the homepage. It plays silently, with a speaker button visitors can press for sound.',
   },
 ];
 
-function filmSection({ slot, film, label, overlay = '', className = '' }) {
+/*
+  `sound: true` adds a small speaker button in the corner of the film. Films
+  always START silent — a browser will not play a film with sound until the
+  visitor asks for it — and the button is how they ask. Press it again to mute.
+*/
+function filmSection({ slot, film, label, overlay = '', className = '', sound = false }) {
   const video = film?.videoUrl ?? '';
   const poster = film?.posterUrl ?? '';
   const alt = film?.alt ?? '';
@@ -797,6 +816,11 @@ function filmSection({ slot, film, label, overlay = '', className = '' }) {
            drawn when something is actually on top. -->
       ${overlay ? '<div class="film-scrim" aria-hidden="true"></div>' : ''}
       ${overlay ? `<div class="film-overlay"><div class="shell">${overlay}</div></div>` : ''}
+
+      ${sound && video ? `
+      <button type="button" class="film-sound" data-film-sound aria-pressed="false" aria-label="Turn sound on">
+        ${icon('soundOff')}
+      </button>` : ''}
 
       <!-- Describes the footage to anyone who cannot watch it. -->
       ${hasMedia && alt ? `<figcaption class="visually-hidden">${esc(alt)}</figcaption>` : ''}
@@ -1267,17 +1291,23 @@ function clipsSection(clips) {
 /* -------------------------------------------------------------- Manifesto --- */
 
 /*
-  The 3 Rs and the 3 Cs.
+  The 3 Rs and the 3 Cs — the same six words, shown two different ways.
 
-  On a desktop this section PINS: it sticks to the screen while you keep
-  scrolling, and each of the six words takes over in turn, crossfading over
+  THE 3 Rs. On a desktop this part PINS: it sticks to the screen while you keep
+  scrolling, and each of the three words takes over in turn, crossfading over
   0.6s. The pinning and the "which word are we on" arithmetic are GSAP
   ScrollTrigger's job (see mountManifesto); the crossfade itself is a plain CSS
-  transition, so it uses exactly the signature easing with no extra library.
+  transition. On a phone, pinning fights the scroll, so the three words become
+  three ordinary stacked panels instead.
 
-  On a phone none of that happens. Pinning a section on a touch screen fights
-  the scroll and leaves people stuck, so the same six words become six ordinary
-  stacked panels that you simply scroll past.
+  THE 3 Cs. Deliberately NOT more of the same. They sit side by side on the
+  light page as three cards — a picture on top, the number, the word and its
+  line underneath — so the page visibly changes gear after the Rs instead of
+  scrolling through three more full screens of colour. On a phone the three
+  cards become a row you swipe sideways, which also keeps the page short.
+
+  The background pictures for all six are set from the same "Manifesto
+  backgrounds" button in edit mode.
 */
 function manifestoSection(settings) {
   const media = settings.manifesto ?? {};
@@ -1302,6 +1332,27 @@ function manifestoSection(settings) {
       </div>
     </article>`;
 
+  /*
+    One C card. With no picture set it is a plain block of the brand blue with
+    the card's number set large in it — a finished-looking card, not a dashed
+    "add media here" frame, because visitors will see it too.
+  */
+  const card = (pillar, index) => {
+    const number = String(MANIFESTO_RS.length + index + 1).padStart(2, '0');
+    const url = media[pillar.key];
+    return `
+    <li class="c-card" data-reveal style="--i:${index}">
+      <div class="c-card-media">
+        ${url
+          ? mediaSlot({ url, label: pillar.word, className: 'c-card-media-inner' })
+          : `<div class="c-card-plain" aria-hidden="true"><span>${number}</span></div>`}
+      </div>
+      ${url ? `<p class="label c-card-index">${number}</p>` : ''}
+      <h3 class="display-4 c-card-word" data-copy="home.manifesto.${pillar.key}.word">${esc(pillar.word)}</h3>
+      <p class="c-card-line" data-copy="home.manifesto.${pillar.key}.line">${esc(pillar.line)}</p>
+    </li>`;
+  };
+
   return `
   <section class="section manifesto" data-manifesto>
     <div class="shell manifesto-head">
@@ -1318,13 +1369,24 @@ function manifestoSection(settings) {
     -->
     <div class="manifesto-track" data-manifesto-track>
       <div class="manifesto-stage" data-manifesto-stage data-active="0">
-        ${MANIFESTO.map(panel).join('')}
+        ${MANIFESTO_RS.map(panel).join('')}
       </div>
 
       <!-- Which word you are on. Hidden on mobile, where they simply stack. -->
       <div class="manifesto-progress" aria-hidden="true">
-        ${MANIFESTO.map((_, index) => `<span data-dot="${index}"></span>`).join('')}
+        ${MANIFESTO_RS.map((_, index) => `<span data-dot="${index}"></span>`).join('')}
       </div>
+    </div>
+
+    <!-- The 3 Cs: three cards side by side, a sideways swipe on a phone. -->
+    <div class="shell cs">
+      <div class="cs-head">
+        <p class="label" data-reveal="text" data-copy="home.manifesto.cs.label">And the three Cs</p>
+        <p class="cs-swipe label" aria-hidden="true">Swipe ${icon('arrowRight')}</p>
+      </div>
+      <ul class="cs-row" tabindex="0" aria-label="The three Cs">
+        ${MANIFESTO_CS.map(card).join('')}
+      </ul>
     </div>
   </section>`;
 }
@@ -1412,7 +1474,9 @@ async function renderHome() {
     ${filmSection({
       slot: 'break',
       film: site.films?.break,
-      label: 'Add the full-width film',
+      label: 'Add the homepage film',
+      className: 'film-section--compact',
+      sound: true,
     })}
     ${whatWeDoSection()}
     ${supportSection()}
@@ -1969,6 +2033,13 @@ const DONATE_TIERS = [4, 5, 10, 15, 20];
 const tierKey = (amount) => `m${amount}`;
 
 /*
+  The LaunchGood campaign. Used whenever no other link has been saved in
+  edit mode ("Donation links"), so the page always has it — paste a different
+  one there and that one wins.
+*/
+const DEFAULT_LAUNCHGOOD = 'https://www.launchgood.com/edgwareyouth';
+
+/*
   The four things people offer that aren't money. All four are editable text —
   the headings and the lines under them — so the list can say whatever is
   actually useful at the time without anybody touching this file.
@@ -2022,124 +2093,97 @@ async function renderSupport() {
   const donate = settings.donate ?? {};
   const monthly = donate.monthly ?? {};
 
-  /* Which amounts actually have a link behind them. An amount without one is
-     not shown at all — a button that goes nowhere is worse than a shorter
-     ladder. In edit mode every amount is shown, so you can see what is still
-     to be filled in. */
-  const tiers = DONATE_TIERS.map((amount) => ({ amount, href: monthly[tierKey(amount)] ?? '' }));
-  const liveTiers = tiers.filter((tier) => tier.href);
-  const shownTiers = state.authed ? tiers : liveTiers;
+  /*
+    THE DONATION CARDS — one-time first, then the monthly ladder, all in one
+    grid, laid out like the old site's Support Us page.
 
-  const hasOneOff = Boolean(donate.oneOff);
-  const hasLaunchgood = Boolean(donate.launchgood);
-  const hasMonthly = liveTiers.length > 0;
+    A card whose link has not been set is not shown to visitors at all — a
+    "Donate Now" button that goes nowhere is worse than one fewer card. In edit
+    mode every card is shown, the unset ones dashed, so you can see what is
+    still to fill in. The links themselves are set from "Donation links".
+  */
+  const cards = [
+    { key: 'once', title: 'One-time donation', copy: 'support.card.once', href: donate.oneOff ?? '' },
+    ...DONATE_TIERS.map((amount) => ({
+      key: tierKey(amount),
+      title: `£${amount} monthly`,
+      copy: '',
+      href: monthly[tierKey(amount)] ?? '',
+    })),
+  ];
+  const liveCards = cards.filter((card) => card.href);
+  const shownCards = state.authed ? cards : liveCards;
 
-  /* With nothing set up at all, a visitor gets the intention, the hadith and
-     the other ways to help — which is still a page worth reading. The three
-     money blocks appear as each one is filled in. */
-  const hasAnyMoney = hasOneOff || hasMonthly || hasLaunchgood;
+  const launchgood = donate.launchgood || DEFAULT_LAUNCHGOOD;
+  /* What the link SAYS: the address without https:// or www., so it reads
+     like the old site's "LaunchGood.com/edgwareyouth". */
+  const launchgoodText = launchgood
+    .replace(/^https?:\/\/(www\.)?/i, '')
+    .replace(/^launchgood\.com/i, 'LaunchGood.com')
+    .replace(/\/$/, '');
+
 
   return `
   <main id="main" class="page page--support">
 
-    <!-- The one large area of colour on this page, and the only place the
-         small-text blue is used as a fill anywhere on the site. -->
+    <!-- The one large area of colour on this page. -->
     <section class="support-hero" data-hero data-hero-tone="dark" data-cursor="invert">
       <div class="shell support-hero-inner">
         <p class="label support-hero-label" data-reveal="text" data-copy="support.label">Support us</p>
 
-        <h1 class="display-1" data-reveal="text" data-copy="support.title">Back the work</h1>
+        <h1 class="display-1" data-reveal="text" data-copy="support.title">Support us</h1>
 
         <p class="prose support-hero-line" data-reveal="text" data-copy="support.line">
-          Every pound goes back into the young people of Edgware — the halaqas, the
-          trips, the football, the food, the hall we hire every week.
+          Below are different ways to support the work we do.
         </p>
       </div>
     </section>
 
-    <!-- The intention. First thing on the page after the heading, before any
-         mention of money, because that is the order it belongs in. -->
+    <!-- The intention, then the hadith, then the cards — before any amount
+         is mentioned, because that is the order it belongs in. -->
     <section class="shell support-intention">
       <p class="label" data-reveal="text" data-copy="support.intention.label">Before you give</p>
 
       <p class="prose support-intention-note" data-reveal="text" data-copy="support.intention.note">
-        Remember to make a good intention before donating.
+        Remember to make a good intention before donating!
       </p>
 
       <figure class="pull-quote" data-reveal="text">
         <blockquote>
-          <p class="pull-quote-text" data-copy="support.hadith.text">Actions are according to
-            intentions, and everyone will get what was intended.</p>
+          <p class="pull-quote-text" data-copy="support.hadith.text">“Actions are according to
+            intentions, and everyone will get what was intended.”</p>
         </blockquote>
-        <figcaption class="label pull-quote-source" data-copy="support.hadith.source">Bukhari &amp; Muslim</figcaption>
+        <figcaption class="label pull-quote-source" data-copy="support.hadith.source">Related by Bukhari &amp; Muslim</figcaption>
       </figure>
     </section>
 
-    ${hasOneOff || state.authed ? `
-    <section class="shell support-block" aria-labelledby="give-once">
-      <p class="label" data-reveal="text" data-copy="support.once.label">One-time</p>
-
-      <h2 class="display-3" id="give-once" data-reveal="text" data-copy="support.once.title">Give once</h2>
-
-      <p class="prose" data-reveal="text" data-copy="support.once.line">
-        Any amount, whenever you want to. It goes into the same pot as everything else.
-      </p>
-
-      <div class="support-actions" data-reveal="text">
-        ${hasOneOff ? donateLink(donate.oneOff, 'Donate now', 'btn btn--primary btn--lg') : ''}
-        ${hasOneOff ? '' : missingLink('the one-time donation')}
-      </div>
-    </section>` : ''}
-
-    ${hasMonthly || state.authed ? `
-    <section class="shell support-block" aria-labelledby="give-monthly">
-      <p class="label" data-reveal="text" data-copy="support.monthly.label">Monthly</p>
-
-      <h2 class="display-3" id="give-monthly" data-reveal="text" data-copy="support.monthly.title">Give every month</h2>
-
-      <p class="prose" data-reveal="text" data-copy="support.monthly.line">
-        Standing support is the thing that lets us plan more than a fortnight ahead.
-        Cancel it whenever you like — it is your own card, on your own Stripe page.
-      </p>
-
+    ${shownCards.length ? `
+    <section class="shell support-block" aria-labelledby="give">
+      <h2 class="visually-hidden" id="give">Donate</h2>
       <!--
-        The number of cards is written onto the grid, exactly like the event
-        grids: however many amounts have a link, that is how many columns
-        there are. Four amounts set up is four cards filling the row, not five
-        columns with a hole in the last one.
+        A wrapping row, centred: six cards on a wide screen go five and then
+        one in the middle of the next line, exactly like the old page; fewer
+        cards simply sit centred on one line.
       -->
-      <ul class="tier-grid" data-count="${shownTiers.length}" style="--cols:${Math.max(1, shownTiers.length)}">
-        ${shownTiers.map((tier) => `
-        <li class="tier" data-reveal="text" ${tier.href ? '' : 'data-unset'}>
-          <p class="tier-amount">£${tier.amount}</p>
-          <p class="tier-period" data-copy="support.tier.period">a month</p>
-          ${tier.href
-            ? donateLink(tier.href, `Give £${tier.amount}`, 'btn tier-btn')
-            : missingLink(`£${tier.amount} a month`)}
+      <ul class="donate-grid">
+        ${shownCards.map((card, index) => `
+        <li class="donate-card" data-reveal style="--i:${index}" data-cursor="invert" ${card.href ? '' : 'data-unset'}>
+          <h3 class="donate-card-title"${card.copy ? ` data-copy="${card.copy}"` : ''}>${esc(card.title)}</h3>
+          ${card.href
+            ? donateLink(card.href, 'Donate Now', 'btn btn--on-band donate-card-btn')
+            : missingLink(card.title)}
         </li>`).join('')}
       </ul>
     </section>` : ''}
 
-    ${hasLaunchgood || state.authed ? `
-    <section class="shell support-block" aria-labelledby="launchgood">
-      <div class="support-panel">
-        <p class="label" data-reveal="text" data-copy="support.launchgood.label">LaunchGood</p>
-
-        <h2 class="display-4" id="launchgood" data-reveal="text" data-copy="support.launchgood.title">
-          Give through LaunchGood
-        </h2>
-
-        <p class="prose" data-reveal="text" data-copy="support.launchgood.line">
-          Our campaign page, if you would rather give there — or if you want to share
-          it on and let other people give too.
-        </p>
-
-        <div class="support-actions" data-reveal="text">
-          ${hasLaunchgood ? donateLink(donate.launchgood, 'Open our campaign', 'btn') : ''}
-          ${hasLaunchgood ? '' : missingLink('the LaunchGood campaign')}
-        </div>
-      </div>
-    </section>` : ''}
+    <section class="shell support-block support-launchgood" aria-labelledby="launchgood">
+      <h2 class="display-4" id="launchgood" data-reveal="text" data-copy="support.launchgood.title">
+        Donate to our LaunchGood campaign!
+      </h2>
+      <p data-reveal="text">
+        <a class="support-launchgood-link" href="${esc(launchgood)}" target="_blank" rel="noopener">${esc(launchgoodText)}</a>
+      </p>
+    </section>
 
     <!--
       NOT EDITABLE, AND IT MUST STAY THAT WAY.
@@ -2153,14 +2197,13 @@ async function renderSupport() {
       This paragraph deliberately cannot: it has no data-copy attribute, so
       there is nothing to click on and nothing to overwrite. Do not add one.
     -->
-    ${hasAnyMoney || state.authed ? `
     <section class="shell support-legal">
       <p class="tiny">
         Edgware Youth is a registered non-profit. We are <strong>not</strong> registered
         with HMRC as a charity, so we cannot claim Gift Aid and donations to us are not
         tax-deductible. Everything given goes directly into running the work.
       </p>
-    </section>` : ''}
+    </section>
 
     <section class="shell support-block support-ways">
       <p class="label" data-reveal="text" data-copy="support.ways.label">Other ways to help</p>
@@ -3269,6 +3312,23 @@ function mountFilms() {
 
     const poster = video.getAttribute('poster');
 
+    /*
+      The sound button, on the films that have one. It flips the film between
+      muted and not, and swaps its own icon and spoken label to match. If the
+      film was paused (it pauses whenever it is off screen) it starts again,
+      because pressing "sound on" and hearing nothing would feel broken.
+    */
+    const soundButton = $('[data-film-sound]', figure);
+    soundButton?.addEventListener('click', () => {
+      if (!video.isConnected) return;
+      video.muted = !video.muted;
+      const on = !video.muted;
+      soundButton.setAttribute('aria-pressed', String(on));
+      soundButton.setAttribute('aria-label', on ? 'Turn sound off' : 'Turn sound on');
+      soundButton.innerHTML = icon(on ? 'soundOn' : 'soundOff');
+      if (on && video.paused) video.play()?.catch?.(() => {});
+    });
+
     /** Swap the film for its poster still. */
     const showPoster = () => {
       if (!poster || !video.isConnected) return false;
@@ -3278,6 +3338,7 @@ function mountFilms() {
       image.alt = '';
       image.decoding = 'async';
       video.replaceWith(image);
+      soundButton?.remove();   // a still picture has no sound to turn on
       return true;
     };
 
@@ -3294,6 +3355,7 @@ function mountFilms() {
       empty.innerHTML = `${icon('film')}<span class="media-empty-label">${esc(figure.dataset.filmLabel ?? 'Add video')}</span>`;
       figure.dataset.hasMedia = 'false';
       video.replaceWith(empty);
+      soundButton?.remove();
     };
 
     /*
@@ -3467,7 +3529,7 @@ function mountManifesto() {
    * would never be lit until you scrolled to the second word.
    */
   const setActive = (index, { force = false } = {}) => {
-    const clamped = Math.max(0, Math.min(MANIFESTO.length - 1, index));
+    const clamped = Math.max(0, Math.min(MANIFESTO_RS.length - 1, index));
     if (!force && stage.dataset.active === String(clamped)) return;
     stage.dataset.active = String(clamped);
     dots.forEach((dot, i) => { dot.dataset.on = String(i === clamped); });
@@ -3495,21 +3557,21 @@ function mountManifesto() {
       start: 'top top',
       /*
         One extra screen of scrolling per word. The stage stays pinned for the
-        whole distance, so six words means the page scrolls six screens while
+        whole distance, so three words means the page scrolls three screens while
         nothing appears to move except the words themselves.
       */
-      end: () => `+=${window.innerHeight * MANIFESTO.length}`,
+      end: () => `+=${window.innerHeight * MANIFESTO_RS.length}`,
       pin: stage,
       pinSpacing: true,
       anticipatePin: 1,
       invalidateOnRefresh: true,
       onUpdate: (self) => {
         /*
-          progress runs 0→1 across all six. Multiplying by the count and
+          progress runs 0→1 across all three. Multiplying by the count and
           flooring gives the index; the 0.999 stops a progress of exactly 1
           from landing one past the end.
         */
-        setActive(Math.floor(Math.min(self.progress, 0.999) * MANIFESTO.length));
+        setActive(Math.floor(Math.min(self.progress, 0.999) * MANIFESTO_RS.length));
       },
     });
 
@@ -3978,8 +4040,18 @@ function mountCursor() {
       with data-cursor="invert" covers everything inside it.
     */
     const under = document.elementFromPoint(mouseX, mouseY);
-    dot.dataset.invert = String(Boolean(under?.closest('[data-cursor="invert"]')));
+    /* The see-through header counts as dark when it is sitting over a dark
+       banner — the header is what is under the pointer, not the banner. */
+    dot.dataset.invert = String(Boolean(
+      under?.closest('[data-cursor="invert"], .header[data-transparent="true"][data-on-dark="true"]')
+    ));
     targetScale = under?.closest('a, button, [data-cursor-grow]') ? GROW : 1;
+    /*
+      Over anything marked data-cursor-ring (the Menu button), the circle
+      becomes a hollow ring instead of a solid dot. A solid blue dot sitting on
+      blue hover text hides the word entirely; a ring frames it instead.
+    */
+    dot.dataset.ring = String(Boolean(under?.closest('[data-cursor-ring]')));
   };
 
   const onLeave = () => { dot.dataset.ready = 'false'; };
