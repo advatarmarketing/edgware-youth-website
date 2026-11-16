@@ -620,7 +620,7 @@ function footerFragment() {
  * the tone is "light" — set it to "dark" on a hero once it carries a photo or
  * a video behind the text.
  */
-function placeholderPage({ key, label, title, lede }) {
+function placeholderPage({ key, label, title, lede, extra = '' }) {
   return `
   <main id="main" class="page">
     <section class="shell" data-hero data-hero-tone="light"
@@ -633,10 +633,14 @@ function placeholderPage({ key, label, title, lede }) {
       <p class="prose" data-reveal="text" style="margin-top:var(--space-2)"
          data-copy="${esc(key)}.lede">${esc(lede)}</p>
 
+      ${extra}
+
+      <!-- A note for us, not for visitors: only shown while logged in. -->
+      ${editOnly(`
       <p class="tiny" style="margin-top:var(--space-3)">
         This page has no sections yet — it is the routing skeleton.
         Everything above can already be edited in edit mode.
-      </p>
+      </p>`)}
     </section>
   </main>`;
 }
@@ -2005,8 +2009,12 @@ async function renderEvent(params) {
     return `
     <main id="main" class="page">
       <section class="shell page-head" data-hero data-hero-tone="light">
-        ${emptyState('We could not find that event', `Nothing is stored under "${params.slug}".`)}
-        <p style="margin-top:var(--space-2)"><a class="btn" href="/events">All events</a></p>
+        <p class="label">Events</p>
+        <h1 class="display-2" style="margin-top:var(--space-1)">We could not find that event</h1>
+        <p class="prose" style="margin-top:var(--space-2)">
+          Nothing is stored under <code>${esc(params.slug)}</code>. It may have been renamed or taken down.
+        </p>
+        <p style="margin-top:var(--space-3)"><a class="btn" href="/events">All events</a></p>
       </section>
     </main>`;
   }
@@ -2801,11 +2809,31 @@ async function renderSupport() {
 }
 
 async function renderContact() {
+  /*
+    The full Contact page isn't built yet. Until it is, a visitor arriving
+    here still gets a way to reach us: the email address and whichever social
+    accounts are set up (both from Site settings — the same ones the footer
+    uses). Nothing shows for an account with no link yet.
+  */
+  const settings = state.settings ?? {};
+  const email = settings.contact?.email ?? '';
+  const socials = SOCIAL_LINKS
+    .map((item) => ({ ...item, url: safeUrl(settings.social?.[item.key]) }))
+    .filter((item) => item.url);
+
+  const extra = (email || socials.length) ? `
+      <div class="contact-ways" data-reveal="text">
+        ${email ? `<a class="btn" href="mailto:${esc(email)}">${icon('mail')} Email us</a>` : ''}
+        ${socials.map((item) => `
+        <a class="btn" href="${item.url}" target="_blank" rel="noopener noreferrer">${icon(item.icon)} ${esc(item.label)}</a>`).join('')}
+      </div>` : '';
+
   return placeholderPage({
     key: 'contact',
     label: 'Contact',
     title: 'Say salaam',
     lede: 'Questions, ideas, or want to get involved? We would like to hear from you.',
+    extra,
   });
 }
 
@@ -3697,8 +3725,14 @@ function closeMenu({ restoreFocus = true } = {}) {
   menu.dataset.open = 'false';
   $('[data-menu-open]', app)?.setAttribute('aria-expanded', 'false');
 
-  if (restoreFocus && menuOpener instanceof HTMLElement && document.contains(menuOpener)) {
-    menuOpener.focus();
+  if (restoreFocus) {
+    /* Back to whatever opened the menu — or, if that is gone (or was nothing
+       in particular), the Menu button. Never left on the hidden Close button,
+       where a keyboard user would be stranded. */
+    const back = menuOpener instanceof HTMLElement && menuOpener !== document.body && document.contains(menuOpener)
+      ? menuOpener
+      : $('[data-menu-open]', app);
+    back?.focus();
   }
   menuOpener = null;
 }

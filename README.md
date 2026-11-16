@@ -1656,13 +1656,31 @@ npm install lenis@latest
 and the file in `vendor/` updates itself. Never edit anything in `vendor/` by
 hand — the next `npm install` will overwrite it.
 
+## Phones: text sizes and tap sizes
+
+Two rules the site keeps on a phone, set once in styles.css so every page
+follows them:
+
+* **Nothing you tap is under 44px tall** — menu links, footer links, the
+  arrow links ("See the full week"), the event filters, the social buttons.
+  The words stay the same size; the area you can tap around them is bigger.
+* **Reading text is at least 16px.** Small text (footer, times, places) is
+  16px on a phone and captions are 14px. Only the small blue UPPERCASE labels
+  stay at 12px — they are labels, not reading text.
+
+Gaps between sections are also a little shorter on a phone (96px instead of
+128px), so you are not scrolling through empty space.
+
 ## What isn't built yet
 
 Honest list, so nothing is a surprise later:
 
 * **One page is still a placeholder**: Contact. The homepage, What We Do,
   the events listing, the page for one event, About and Support Us are all
-  real.
+  real. Until Contact is built, a visitor there sees the heading, the line
+  under it, and buttons for the email address and each social account set
+  in **Contact & social links** — so it is never a dead end. The note saying
+  the page is unfinished only shows while you are logged in.
 * **The About page is all placeholder text.** The structure is finished; every
   word in it is waiting for you — see "The About page and its timeline".
 * **A programme's description is not shown on a desktop.** The row is two

@@ -211,6 +211,27 @@
   --video-ratio: 33 / 20;
 }
 
+/*
+  PHONES. Three of the sizes above step up a little on a phone, and the two
+  biggest gaps step down.
+
+  - Small and caption text: 15px and 13px read fine on a laptop at arm's
+    length but are a strain on a phone in your hand, so on a phone they are
+    16px and 14px. The 12px uppercase labels stay as they are — they are
+    labels, not reading text.
+  - Gaps between sections: 128px above AND below every section is a third of
+    a phone screen of nothing between one section and the next. 96px keeps the
+    same rhythm without the dead air.
+*/
+@media (max-width: 767px) {
+  :root {
+    --small: 16px;
+    --micro: 14px;
+    --space-4: 96px;
+    --space-5: 144px;
+  }
+}
+
 
 /* =========================================================== 2. Reset ===== */
 
@@ -686,8 +707,8 @@ body[data-menu='open'] { overflow: hidden; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border: 1px solid var(--hairline);
   transition:
     border-color 0.3s var(--ease-ref),
@@ -985,7 +1006,7 @@ body[data-cursor='on'] [contenteditable] { cursor: auto; }
 }
 .icon-btn:hover { border-color: var(--ink); }
 
-.tiny { font-size: 13px; color: var(--ink-60); }
+.tiny { font-size: var(--micro); color: var(--ink-60); }
 .stack-2 { display: grid; gap: var(--space-2); }
 
 .empty-state { padding: var(--space-2) 0; }
@@ -1537,6 +1558,21 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
 /* No film yet: no wash either, or the placeholder sits under a grey veil. */
 .hero[data-has-media='false'] .hero-scrim { display: none; }
 
+/* On a phone the words fill the whole width, and sit in the lower half — right
+   where subtitles burned into the film appear. So the wash there is a single
+   top-to-bottom one, lightest at the top and darkest behind the words. */
+@media (max-width: 767px) {
+  .hero-scrim {
+    background: linear-gradient(
+      to bottom,
+      rgba(10, 10, 10, 0.45) 0%,
+      rgba(10, 10, 10, 0.35) 28%,
+      rgba(10, 10, 10, 0.74) 50%,
+      rgba(10, 10, 10, 0.82) 100%
+    );
+  }
+}
+
 /* The extra darkening for bright moments in the film. app.js sets its opacity
    from 0 (invisible) to 1; the transition stops it flickering frame to frame.
    To make it darker or lighter at its strongest, change the 0.6 below. */
@@ -1608,6 +1644,14 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
   background: currentColor;
   transform-origin: top;
   animation: cue-drop 2.4s var(--ease-ref) infinite;
+}
+
+/* On a phone the strapline runs the full width, so the cue has to sit in the
+   space BELOW it rather than beside it: lower, with a shorter line. */
+@media (max-width: 767px) {
+  .hero { padding-bottom: calc(var(--space-3) + 48px); }
+  .hero-cue { bottom: 20px; gap: 8px; }
+  .hero-cue-line { height: 32px; }
 }
 
 @keyframes cue-drop {
@@ -1898,7 +1942,9 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
   color: rgba(244, 244, 242, 0.55);
   align-content: end;
   justify-items: start;
-  padding: var(--space-3);
+  /* In line with the words above it (the page gutter, not a fixed 64px), and
+     low enough to sit clear of them on a phone. */
+  padding: var(--space-2) var(--gutter);
 }
 
 .pillar-scrim {
@@ -1909,6 +1955,9 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
 .pillar:has(.media--empty) .pillar-scrim { display: none; }
 
 .pillar-body { position: relative; padding-block: var(--space-4); }
+/* While a panel has no picture yet, its "Add media" note sits at the foot of
+   the panel; this keeps the words clear of it at every screen size. */
+.pillar:has(.media--empty) .pillar-body { padding-bottom: max(var(--space-4), calc(var(--space-2) + 88px)); }
 .pillar-index { color: var(--on-brand); opacity: 0.7; }
 .pillar-word { margin-top: var(--space-1); }
 
@@ -2949,7 +2998,7 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
   .amounts { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
   .amount { padding: 14px 2px; }
   .amount-figure { font-size: 1.2rem; }
-  .amount-period { font-size: 11px; }
+  .amount-period { font-size: var(--label); }
   .donate-panel-action .btn { width: 100%; min-width: 0; }
   .ways-grid { grid-template-columns: minmax(0, 1fr); }
 }
@@ -3261,7 +3310,10 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
 
 .hw-link {
   display: grid;
-  grid-template-columns: minmax(0, 2.2fr) minmax(0, 2fr) minmax(0, 4fr) minmax(0, 2.4fr) 24px;
+  /* The name gets the widest column: at 2.2 / 2 / 4 / 2.4 most names broke
+     onto two lines while the short "Location TBC" column sat half empty, so
+     the rows came out uneven heights. */
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1.7fr) minmax(0, 5.2fr) minmax(0, 2fr) 24px;
   align-items: center;
   gap: var(--space-1);
   padding: var(--space-2) 0;
@@ -3343,3 +3395,56 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
 /* A weekly session's name links to its own page. */
 .session-title a { transition: color var(--dur-fast) var(--ease-ref); }
 .session-title a:hover { color: var(--accent); }
+
+
+/* ---- Tap targets on touch screens ------------------------------------------
+
+   44px is the smallest thing a fingertip hits reliably (Apple and Google both
+   use it). Several links here are only as tall as their text — 19px for the
+   footer links — which is fine with a mouse and fiddly with a thumb. On a
+   touch screen each one gets a 44px-tall hit area. The text does not move or
+   grow; only the invisible area you can tap around it does.
+*/
+@media (pointer: coarse), (max-width: 767px) {
+  .brand,
+  .menu-trigger,
+  .link-arrow,
+  .footer-links a,
+  .footer .text-link,
+  .webdev-pill,
+  .filter {
+    min-height: 44px;
+  }
+  .brand,
+  .footer-links a,
+  .footer .text-link { display: inline-flex; align-items: center; }
+  .menu-trigger { min-width: 44px; }
+  /* The links were 6px apart when they were 19px tall; now each is 44px, so
+     the gap goes — otherwise the column gets twice as long. */
+  .footer-links { gap: 0; }
+  /* The menu's own links: big words, but set so tight (line-height 0.9) that
+     each was only 27px tall and touching the next one — easy to open the
+     wrong page. The padding gives each a full 44px+ without changing the
+     size of the words. */
+  .menu-link { padding-block: 10px; }
+  .menu-links { gap: 0; }
+  .webdev-pill { padding-inline: 16px; }
+  /* A link inside a sentence can't be made taller without pushing the lines
+     apart, so this one gets padding that reaches above and below instead. */
+  .support-launchgood-link { display: inline-block; padding-block: 12px; }
+}
+
+/* A page that ENDS on a full-colour band (the blue "Back the next generation"
+   band) had 128px of empty grey between the band and the footer — a stripe of
+   nothing that looked like a mistake. The band is its own ending; the footer
+   follows straight on. */
+.page:has(> .cta-band:last-child) + .footer { margin-top: 0; }
+
+/* Contact (until the full page is built): the ways to reach us, as buttons. */
+.contact-ways {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-3);
+}
+.contact-ways .btn .icon { width: 16px; height: 16px; }
