@@ -835,8 +835,9 @@ Each word, each line underneath it, and each background image is separately
 editable.
 
 **6. The homepage film** — under the three Cs, in two columns: the film on
-the left, and on the right a short heading, a line and a link ("Watch / From
-the talks" — placeholder wording, click to rewrite it in edit mode). The film
+the left, and on the right a short heading and a line ("Watch / Palestine —
+A short film we made about Palestine." — click either to rewrite it in edit
+mode). The film
 keeps its OWN shape — a square clip shows square, a portrait one portrait —
 so nothing like subtitles or faces is cropped off. It plays silently; the
 round speaker button turns the sound on and off. On a phone the words sit

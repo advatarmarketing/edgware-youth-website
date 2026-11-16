@@ -1570,12 +1570,9 @@ async function renderHome() {
          instead of floating alone in the middle of the page. */
       aside: `
         <p class="label" data-reveal="text" data-copy="home.film.label">Watch</p>
-        <h2 class="display-3 film-aside-title" data-reveal="text" data-copy="home.film.title">From the talks</h2>
+        <h2 class="display-3 film-aside-title" data-reveal="text" data-copy="home.film.title">Palestine</h2>
         <p class="prose film-aside-line" data-reveal="text" data-copy="home.film.line">
-          A minute from one of our Saturday evening talks. Press the speaker to listen.
-        </p>
-        <p data-reveal="text">
-          <a class="link-arrow" href="/events"><span data-copy="home.film.link">See what's on</span>${icon('arrowRight')}</a>
+          A short film we made about Palestine. Press the speaker to listen.
         </p>`,
     })}
     ${whatWeDoSection()}
