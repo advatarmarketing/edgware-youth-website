@@ -2624,7 +2624,7 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
 
 /* ---- The intention, and the hadith -------------------------------------- */
 
-.support-intention { padding-block: var(--space-4) var(--space-3); }
+.support-intention { padding-block: var(--space-4) var(--space-2); }
 .support-intention-note { max-width: 46ch; margin-top: var(--space-1); }
 
 .pull-quote {
@@ -2693,52 +2693,98 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
   font-size: var(--body);
 }
 
-/* ---- The donation cards --------------------------------------------------- */
+/* ---- The two ways to give ------------------------------------------------- */
 
 /*
-  One-time first, then the monthly amounts — solid blue cards with the amount
-  and a "Donate Now" button, laid out like the old site's Support Us page.
-
-  Flex and centred rather than a grid, so whatever is left over on the last
-  line sits in the MIDDLE (six cards on a wide screen: five, then one centred).
+  Two panels side by side: GIVE ONCE in solid blue on the left, GIVE MONTHLY
+  on the right with the amount picker. Same height, same padding, so they read
+  as a pair. With only one of them set up, it takes the full width.
 */
-.donate-grid {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--space-1);
-}
+.donate { padding-top: 0; }
 
-.donate-card {
-  flex: 0 1 calc((100% - 4 * var(--space-1)) / 5);
-  min-width: 200px;
+.donate-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: var(--space-1);
+  align-items: stretch;
+}
+.donate-layout[data-single='true'] { grid-template-columns: minmax(0, 1fr); max-width: 760px; }
+
+.donate-panel {
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: var(--space-1);
-  padding: var(--space-2) var(--space-1);
-  background: var(--brand);
-  color: var(--on-brand);
-  text-align: center;
+  padding: var(--space-3) var(--space-2);
+  border: 1px solid var(--ink);
 }
 
-.donate-card-title {
-  font-size: var(--heading);
+.donate-panel--once {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--on-brand);
+}
+.donate-panel--once .donate-panel-label { color: var(--on-brand); }
+.donate-panel--once .donate-panel-line { color: rgba(244, 244, 242, 0.82); }
+
+.donate-panel-title {
+  font-size: clamp(1.75rem, 3.2vw, 2.75rem);
   font-weight: var(--weight-medium);
   line-height: var(--line-head);
+  text-transform: uppercase;
+}
+.donate-panel-line { max-width: 40ch; color: var(--ink-70); line-height: var(--line-body); }
+
+/* The button sits at the bottom of each panel, so the two line up. */
+.donate-panel-action { margin-top: auto; padding-top: var(--space-2); }
+
+/* White button on the blue panel. */
+.btn--light { background: var(--on-brand); border-color: var(--on-brand); color: var(--brand); }
+.btn--light:hover { background: transparent; color: var(--on-brand); }
+
+/* ---- The amount picker ---------------------------------------------------- */
+
+.amounts {
+  border: 0;
+  padding: 0;
+  margin: var(--space-1) 0 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
 }
 
-.donate-card-btn { margin-top: auto; white-space: nowrap; }
-
-/* A card with no link yet. Only ever rendered in edit mode. */
-.donate-card[data-unset] {
-  background: none;
-  color: var(--ink);
-  border: 1px dashed var(--accent);
+.amount {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 18px 8px;
+  border: 1px solid var(--hairline);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-ref),
+              background   var(--dur-fast) var(--ease-ref),
+              color        var(--dur-fast) var(--ease-ref);
 }
+/* The real radio button is invisible but still there — it is what the
+   keyboard and screen readers use. The box around it is the visible part. */
+.amount input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.amount:hover { border-color: var(--ink); }
+.amount:has(input:checked) { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+.amount:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.amount[data-unset] { border-style: dashed; opacity: 0.5; cursor: not-allowed; }
+
+.amount-figure { font-size: var(--display-4); font-weight: var(--weight-medium); line-height: var(--line-head); }
+.amount-period { font-size: var(--micro); opacity: 0.75; }
+
+.donate-monthly-btn { min-width: 260px; }
+
+.donate-secure {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: var(--space-1);
+  color: var(--ink-60);
+}
+.donate-secure .icon { width: 14px; height: 14px; flex: none; }
 
 /* ---- LaunchGood ------------------------------------------------------------ */
 
@@ -2793,15 +2839,19 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
 /* ---- Narrower screens ------------------------------------------------------ */
 
 @media (max-width: 1000px) {
-  /* Three cards a row on tablets (six cards = two tidy rows of three). */
-  .donate-card { flex-basis: calc((100% - 2 * var(--space-1)) / 3); min-width: 0; }
+  /* Tablets and phones: the two panels stack, monthly underneath. */
+  .donate-layout { grid-template-columns: minmax(0, 1fr); }
   .ways-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 600px) {
-  /* Two cards a row on phones. */
-  .donate-card { flex-basis: calc((100% - var(--space-1)) / 2); padding-inline: 10px; }
-  .donate-card-btn { padding: 0 14px; gap: 6px; font-size: var(--micro); }
+  .donate-panel { padding: var(--space-2) var(--space-1); }
+  /* All five amounts on one row — no orphan on a second line. */
+  .amounts { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+  .amount { padding: 14px 2px; }
+  .amount-figure { font-size: 1.2rem; }
+  .amount-period { font-size: 11px; }
+  .donate-panel-action .btn { width: 100%; min-width: 0; }
   .ways-grid { grid-template-columns: minmax(0, 1fr); }
 }
 

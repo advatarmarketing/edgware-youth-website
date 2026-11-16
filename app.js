@@ -2395,6 +2395,25 @@ function mountAbout() {
 /* ---------------------------------------------------------- Support us --- */
 
 /*
+  The monthly picker. Choosing an amount changes the one button underneath —
+  its words ("Donate £15 a month") and where it goes (that amount's Stripe
+  link). Nothing is sent anywhere until the button itself is pressed.
+*/
+function mountSupport() {
+  const panel = $('[data-monthly]', app);
+  const go = panel && $('[data-monthly-go]', panel);
+  if (!go) return;
+  const label = $('[data-monthly-label]', go);
+  panel.addEventListener('change', (event) => {
+    const input = event.target.closest('input[name="monthly-amount"]');
+    if (!input?.dataset.href) return;
+    go.href = input.dataset.href;
+    label.textContent = `Donate £${input.value} a month`;
+  });
+}
+
+
+/*
   THE MONEY LADDER.
 
   Five monthly amounts, in pounds, matching DONATE_TIERS in api/settings.js.
@@ -2469,25 +2488,23 @@ async function renderSupport() {
   const monthly = donate.monthly ?? {};
 
   /*
-    THE DONATION CARDS — one-time first, then the monthly ladder, all in one
-    grid, laid out like the old site's Support Us page.
+    THE DONATION PANELS — give once (left) and give monthly (right).
 
     A card whose link has not been set is not shown to visitors at all — a
     "Donate Now" button that goes nowhere is worse than one fewer card. In edit
     mode every card is shown, the unset ones dashed, so you can see what is
     still to fill in. The links themselves are set from "Donation links".
   */
-  const cards = [
-    { key: 'once', title: 'One-time donation', copy: 'support.card.once', href: donate.oneOff ?? '' },
-    ...DONATE_TIERS.map((amount) => ({
-      key: tierKey(amount),
-      title: `£${amount} monthly`,
-      copy: '',
-      href: monthly[tierKey(amount)] ?? '',
-    })),
-  ];
-  const liveCards = cards.filter((card) => card.href);
-  const shownCards = state.authed ? cards : liveCards;
+  const onceShown = Boolean(donate.oneOff) || state.authed;
+  const monthlyAll = DONATE_TIERS.map((amount) => ({ amount, href: monthly[tierKey(amount)] ?? '' }));
+  /* Visitors only see amounts that have a link; edit mode shows them all. */
+  const monthlyShown = state.authed ? monthlyAll : monthlyAll.filter((tier) => tier.href);
+  const withLinks = monthlyAll.filter((tier) => tier.href);
+  /* Start on £10 if it has a link, otherwise the middle of what does. */
+  const defaultTier = withLinks.find((tier) => tier.amount === 10)
+    ?? withLinks[Math.floor((withLinks.length - 1) / 2)];
+  const defaultAmount = defaultTier?.amount ?? 0;
+  const defaultHref = defaultTier?.href ?? '';
 
   const launchgood = donate.launchgood || DEFAULT_LAUNCHGOOD;
   /* What the link SAYS: the address without https:// or www., so it reads
@@ -2532,23 +2549,60 @@ async function renderSupport() {
       </figure>
     </section>
 
-    ${shownCards.length ? `
-    <section class="shell support-block" aria-labelledby="give">
-      <h2 class="visually-hidden" id="give">Donate</h2>
-      <!--
-        A wrapping row, centred: six cards on a wide screen go five and then
-        one in the middle of the next line, exactly like the old page; fewer
-        cards simply sit centred on one line.
-      -->
-      <ul class="donate-grid">
-        ${shownCards.map((card, index) => `
-        <li class="donate-card" data-reveal style="--i:${index}" data-cursor="invert" ${card.href ? '' : 'data-unset'}>
-          <h3 class="donate-card-title"${card.copy ? ` data-copy="${card.copy}"` : ''}>${esc(card.title)}</h3>
-          ${card.href
-            ? donateLink(card.href, 'Donate Now', 'btn btn--on-band donate-card-btn')
-            : missingLink(card.title)}
-        </li>`).join('')}
-      </ul>
+    ${onceShown || monthlyShown.length ? `
+    <!--
+      THE TWO WAYS TO GIVE, side by side.
+
+      Left, in solid blue: give once. Right: give monthly — pick an amount, then
+      one button. The button's wording and link change with the amount picked
+      (mountSupport does that). £10 is picked to begin with, or the nearest
+      amount that has a link.
+    -->
+    <section class="shell support-block donate" aria-label="Donate">
+      <div class="donate-layout" data-single="${onceShown && monthlyShown.length ? 'false' : 'true'}">
+
+        ${onceShown ? `
+        <article class="donate-panel donate-panel--once" data-cursor="invert" data-reveal>
+          <p class="label donate-panel-label" data-copy="support.once.label">One-time</p>
+          <h2 class="donate-panel-title" data-copy="support.once.title">Give once</h2>
+          <p class="donate-panel-line" data-copy="support.once.line">Any amount, whenever you like. Every pound goes straight back into the work.</p>
+          <div class="donate-panel-action">
+            ${donate.oneOff
+              ? donateLink(donate.oneOff, 'Donate now', 'btn btn--light btn--lg')
+              : missingLink('the one-time donation')}
+          </div>
+        </article>` : ''}
+
+        ${monthlyShown.length ? `
+        <article class="donate-panel donate-panel--monthly" data-reveal data-monthly>
+          <p class="label" data-copy="support.monthly.label">Monthly</p>
+          <h2 class="donate-panel-title" data-copy="support.monthly.title">Give every month</h2>
+          <p class="donate-panel-line" data-copy="support.monthly.line">Regular giving is what lets us plan ahead. Cancel any time from your own Stripe page.</p>
+
+          <fieldset class="amounts">
+            <legend class="visually-hidden">Choose a monthly amount</legend>
+            ${monthlyShown.map((tier) => `
+            <label class="amount" ${tier.href ? '' : 'data-unset'}>
+              <input type="radio" name="monthly-amount" value="${tier.amount}"
+                     data-href="${esc(tier.href)}" ${tier.amount === defaultAmount ? 'checked' : ''}
+                     ${tier.href ? '' : 'disabled'}>
+              <span class="amount-figure">£${tier.amount}</span>
+              <span class="amount-period">a month</span>
+            </label>`).join('')}
+          </fieldset>
+
+          <div class="donate-panel-action">
+            ${defaultHref ? `
+            <a class="btn btn--primary btn--lg donate-monthly-btn" data-monthly-go
+               href="${esc(defaultHref)}" target="_blank" rel="noopener">
+              <span data-monthly-label>Donate £${defaultAmount} a month</span>${icon('arrowRight')}
+            </a>` : missingLink('any monthly amount')}
+          </div>
+          ${state.authed ? monthlyShown.filter((tier) => !tier.href).map((tier) => missingLink(`£${tier.amount} a month`)).join('') : ''}
+        </article>` : ''}
+      </div>
+
+      <p class="tiny donate-secure">${icon('lock')} <span data-copy="support.secure">Payments are handled securely by Stripe. No card details ever touch this website.</span></p>
     </section>` : ''}
 
     <section class="shell support-block support-launchgood" aria-labelledby="launchgood">
@@ -3118,7 +3172,7 @@ const ROUTES = [
   {
     path: '/support', key: 'support', title: 'Support Us',
     description: 'Back the work. Give once or monthly, through Stripe or LaunchGood — or help with a venue, equipment, sponsorship or your time.',
-    render: renderSupport,
+    render: renderSupport, mount: mountSupport,
   },
   {
     path: '/contact', key: 'contact', title: 'Contact',

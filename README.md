@@ -1235,10 +1235,13 @@ Laid out like the old WordPress Support Us page.
 2. **The intention** — "Remember to make a good intention before donating!",
    then the hadith "Actions are according to intentions, and everyone will
    get what was intended" (Related by Bukhari & Muslim), set large.
-3. **The donation cards** — solid blue cards, each with a "Donate Now" button:
-   One-time donation, then £4, £5, £10, £15 and £20 monthly. On a wide screen
-   that is five on the first row and one centred underneath; three a row on a
-   tablet; two a row on a phone.
+3. **The two ways to give**, side by side (stacked on a phone):
+   * **Give once** — a solid blue panel with one "Donate now" button.
+   * **Give every month** — pick an amount (£4, £5, £10, £15 or £20) and press
+     the one button underneath, which changes to "Donate £15 a month" and so
+     on and goes to that amount's Stripe link. £10 is picked to begin with.
+     Amounts without a link are left out for visitors.
+   Underneath: a one-line note that payments are handled securely by Stripe.
 4. **"Donate to our LaunchGood campaign!"** with the link
    LaunchGood.com/edgwareyouth underneath. Always shown.
 6. **The small print** about our status — see below.
@@ -1260,14 +1263,14 @@ address including the `https://`.
 
 | What is set | What a visitor sees |
 |---|---|
-| Three of the five monthly amounts | Three monthly cards, centred — no gap where the other two would be |
-| No one-time link | No One-time donation card |
+| Three of the five monthly amounts | Those three amounts to pick from |
+| No one-time link | No Give once panel — Give every month takes the full width |
 | No LaunchGood link | The built-in one, LaunchGood.com/edgwareyouth |
 | No Stripe links at all | The heading, the intention, the hadith, LaunchGood and the other ways to help |
 
 A button that goes nowhere is worse than no button, so there is never one.
 
-In **edit mode** you see all six cards whatever is set, with a note on each
+In **edit mode** you see both panels and all five amounts whatever is set (amounts without a link are faded), with a note on each
 empty one saying it is hidden from visitors — so you can see at a glance what
 is still to be filled in. Visitors never see those notes.
 
