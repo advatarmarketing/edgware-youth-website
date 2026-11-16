@@ -1210,11 +1210,26 @@ function featuredEventSection({ upcoming, past }) {
 
   const date = formatEventDate(event.date);
 
+  /*
+    The label says WHY this event is here, because the three reasons are
+    different promises:
+      - ticked "Feature on the homepage"  → "Can't miss" (it is the one we
+        are pushing, which is not necessarily the next one on the calendar)
+      - simply the next one coming up     → "Next up"
+      - nothing coming up, so the last one → "Most recently"
+    Each wording can be rewritten in edit mode on its own.
+  */
+  const [labelKey, labelText] = isPast
+    ? ['label-past', 'Most recently']
+    : event.featured
+      ? ['label-featured', "Can't miss"]
+      : ['label', 'Next up'];
+
   return `
   <section class="section featured">
     <div class="shell">
       <p class="label" data-reveal="text"
-         data-copy="home.featured.${isPast ? 'label-past' : 'label'}">${isPast ? 'Most recently' : 'Next up'}</p>
+         data-copy="home.featured.${labelKey}">${labelText}</p>
 
       <a class="featured-inner" href="/events/${esc(event.slug)}">
         <div class="featured-media" data-reveal>

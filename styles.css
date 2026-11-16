@@ -1695,6 +1695,19 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
 
 .featured-summary { margin-block: var(--space-2); }
 
+/*
+  The highlighted event and the weekly programmes are one story — "what's on"
+  — so they sit closer together than two unrelated sections would. Without
+  this the two lots of section padding stacked into ~190px of nothing on a
+  phone.
+*/
+.featured + .home-week { padding-top: 0; }
+
+@media (max-width: 767px) {
+  .featured-summary { margin-block: var(--space-1) var(--space-2); }
+  .home-week-head { gap: var(--space-1); margin-bottom: var(--space-2); }
+}
+
 @media (max-width: 860px) {
   .featured-inner { grid-template-columns: 1fr; gap: var(--space-2); }
 }
