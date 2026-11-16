@@ -1440,13 +1440,17 @@ function manifestoSection(settings) {
   const panel = (pillar, index) => `
     <article class="pillar" data-pillar="${esc(pillar.key)}" data-index="${index}"
              data-cursor="invert" data-reveal>
-      <div class="pillar-media">
-        ${mediaSlot({
-          url: media[pillar.key],
-          label: `Add media for ${pillar.word}`,
-          className: 'pillar-media-inner',
-        })}
-      </div>
+      <div class="pillar-media">${/* With no picture yet, visitors see the plain blue panel only. The
+             "Add media for …" note is a reminder for us, so it only shows
+             while logged in. Adding media ("Manifesto backgrounds" in edit
+             mode) works the same either way. */
+          media[pillar.key] || state.authed
+          ? mediaSlot({
+              url: media[pillar.key],
+              label: `Add media for ${pillar.word}`,
+              className: 'pillar-media-inner',
+            })
+          : ''}</div>
 
       <div class="pillar-scrim" aria-hidden="true"></div>
 

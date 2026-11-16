@@ -874,7 +874,9 @@ Five chips, all in edit mode:
 * **Manage clips** — beside the Recent clips heading. With no clips yet, the
   section only appears in edit mode, with an "Add a clip" button in it.
 * **Manifesto backgrounds** — one image or video per word. Any left blank show
-  flat colour, which is a perfectly good look.
+  flat colour, which is a perfectly good look. On the three Rs, the small
+  "Add media for …" note on a blank panel only appears while you are logged
+  in — visitors just see the blue.
 * **Change this film** — under the full-width film.
 
 And on What We Do: **Manage programmes**, and the chip under the film there.

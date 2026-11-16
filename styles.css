@@ -1965,7 +1965,10 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
   inset: 0;
   background: linear-gradient(to top, rgba(10, 10, 10, 0.72), rgba(10, 10, 10, 0.25));
 }
-.pillar:has(.media--empty) .pillar-scrim { display: none; }
+/* No picture (an empty slot, or — for visitors — no slot at all): no
+   darkening either, so the panel stays plain brand blue. */
+.pillar:has(.media--empty) .pillar-scrim,
+.pillar:has(.pillar-media:empty) .pillar-scrim { display: none; }
 
 .pillar-body { position: relative; padding-block: var(--space-4); }
 /* While a panel has no picture yet, its "Add media" note sits at the foot of
