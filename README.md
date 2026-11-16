@@ -1133,41 +1133,49 @@ Delete all three once there are real ones.
 ---
 
 
-## The weekly timetable
+## The weekly timetable — weekly events
 
-Everything that happens **every week** lives in one list, and the site uses
-it in two places, so you only ever change a time once:
+Every event has a **How often** choice, three tabs at the top of the event
+form:
 
-* **Events page → "Every week"** — the full timetable. Seven columns, Monday to
-  Sunday, with today's column shaded and marked **Tonight** (or **Today** if
-  nothing is on). On a phone, empty days are hidden and the list starts with
-  today, so the first thing someone sees is what's on tonight.
-* **What We Do → "The week"** — the short version: day, time, name and who it
-  is for.
-* **Homepage → "Our weekly programmes"**, straight under "Most recently" — a
-  timetable of rows (day, time, programme, where). Each row links to the full
-  week on the Events page.
+* **One-off** — happens once, on its date. Shown under Upcoming, then under
+  Been and gone after the day. Counted in the number beside Events in the
+  menu.
+* **Weekly** — happens every week. Instead of a date you pick **which day**
+  (and an *order within the day*, if two things share one). Weekly events do
+  NOT appear in the Upcoming / Been and gone lists or the menu count. They
+  fill the weekly timetable instead.
+* **Recurring** — comes round again: once a year, every Ramadan, every summer.
+  Say how often in *How often it comes round*, and give the date of the next
+  one. It shows in the event lists like a one-off, labelled "Once a year ·
+  next 20 July 2027".
 
-**Starting list** (times and most places are placeholders — "time TBC",
-"Location TBC" — fill them in from *Manage the week*):
-Wednesday evening, Run + Calisthenics Club · Thursday evening, Brazilian Jiu
-Jitsu at S2One, Queensbury · Thursday evening, Weekly Football · Friday
-evening, Graham Park Halaqah · Saturday morning, Fajr Run Club · Saturday
-evening, The Edgware Youth Talk.
+The form only shows the boxes that belong to the tab you pick. The Date box is
+a calendar picker, so the day and the month cannot get swapped.
 
-The same six are also rows in the **programme table on What We Do** (Manage
-programmes), each with a placeholder description. That table is a separate
-list — it is where each programme gets its picture and description — so a
-new weekly session wants adding in both places.
+**Where the weekly events appear:**
 
-**To change it:** log in, go to Events, press **Manage the week**. Each session
-has: what it is, the day (pick from the list), the time (any wording — "7.00 –
-8.30pm", "After Maghrib"), who it is for, where, a line or two about it, and
-an optional picture. Untick *Show on the site* to hide one for a while without
-deleting it — over Ramadan, say.
+* **Homepage → "Our weekly programmes"**, under "Most recently" — a timetable
+  of rows: day, time, name, where. Each row opens that programme's own page.
+* **Events → "Every week"** — seven columns, Monday to Sunday, today shaded
+  and marked "Tonight". On a phone it starts with today and hides empty days.
+* **What We Do → "The week"** — the short version.
+* **Each one's own page**, e.g. /events/weekly-football, which says "Every
+  Thursday" where a one-off says its date.
 
-One-off things (a talk, a trip) are still **events**, added with *Add event*.
-The week is only for what repeats.
+**To add one:** log in, press **Add a weekly event** (homepage or Events), or
+**Add event** and pick the Weekly tab. **To change one:** **Manage events**, or
+"Edit this event" on its page.
+
+**The six programmes** (Run + Calisthenics Club, Brazilian Jiu Jitsu, Weekly
+Football, Graham Park Halaqah, Fajr Run Club, The Edgware Youth Talk) used to
+be a separate list. The first time you log in after this change, the site
+copies them into events as Weekly events by itself and says so in a message.
+It only ever does this once. Times and most places are still placeholders
+("time TBC", "Location TBC").
+
+The programme table on What We Do is a separate list (Manage programmes) —
+that is where each programme gets its picture and longer description there.
 
 ## Previous events — the poster wall
 

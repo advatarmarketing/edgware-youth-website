@@ -496,7 +496,7 @@ function menuFragment(path) {
     */
     const records = item.count ? state[item.count] : null;
     const total = Array.isArray(records)
-      ? records.filter((record) => record.published !== false).length
+      ? records.filter((record) => record.published !== false && !isWeekly(record)).length
       : null;
 
     const count = total
@@ -890,16 +890,51 @@ function formatEventDate(value) {
  * it is far more likely to be one somebody is still writing than one that has
  * already happened.
  */
+/** Weekly events live in the timetable, not in the dated lists. */
+const isWeekly = (event) => event?.frequency === 'weekly';
+
+/*
+  The weekly timetable, built from the events marked Weekly. Until there are
+  any, it falls back to the older separate list (/api/lists/weekly) — which
+  the site copies into events by itself the first time you log in (see
+  migrateWeeklyList).
+*/
+function weekFromEvents(events, legacy = []) {
+  const weekly = (events ?? [])
+    .filter((event) => isWeekly(event) && event.published !== false)
+    .map((event) => ({
+      id: event.id,
+      slug: event.slug,
+      title: event.title,
+      day: event.day,
+      time: event.time,
+      who: event.who,
+      location: event.location,
+      description: event.summary,
+      imageUrl: event.imageUrl,
+      imageAlt: event.imageAlt,
+      order: event.order ?? 0,
+      published: true,
+    }));
+  return weekly.length ? weekly : (legacy ?? []);
+}
+
+/* A date the browser can actually read. One it cannot (2026-27-09, day and
+   month swapped) is treated as "no date yet", so the event still shows under
+   Upcoming instead of vanishing from both lists. */
+const hasDate = (event) =>
+  Boolean(event.date) && !Number.isNaN(new Date(`${event.date}T00:00:00`).getTime());
+
 function sortEvents(events) {
   const today = startOfToday();
-  const live = (events ?? []).filter((event) => event.published !== false);
+  const live = (events ?? []).filter((event) => event.published !== false && !isWeekly(event));
 
   const upcoming = live
-    .filter((event) => !event.date || new Date(`${event.date}T00:00:00`) >= today)
+    .filter((event) => !hasDate(event) || new Date(`${event.date}T00:00:00`) >= today)
     .sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999'));
 
   const past = live
-    .filter((event) => event.date && new Date(`${event.date}T00:00:00`) < today)
+    .filter((event) => hasDate(event) && new Date(`${event.date}T00:00:00`) < today)
     .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
   return { upcoming, past };
@@ -969,7 +1004,11 @@ function sizeEventGrid(grid, count, max = 4) {
  * of cards on screen without anything being re-rendered.
  */
 function eventCard(event, { index = 0, more = false } = {}) {
-  const date = formatEventDate(event.date);
+  const day = formatEventDate(event.date);
+  /* A recurring one says how often, then when the next one is. */
+  const date = event.frequency === 'recurring' && event.repeats
+    ? (day ? `${event.repeats} · next ${day}` : event.repeats)
+    : day;
 
   return `
   <a class="event-card" href="/events/${esc(event.slug)}" data-reveal style="--i:${index}"
@@ -1110,7 +1149,7 @@ function homeWeekSection(items) {
   const row = (item, index) => `
     <li class="hw-row" data-reveal="text" style="--i:${index}" data-today="${item.day === today}"
         data-same-day="${index > 0 && week[index - 1].day === item.day}">
-      <a class="hw-link" href="/events#every-week">
+      <a class="hw-link" href="${item.slug ? `/events/${esc(item.slug)}` : '/events#every-week'}">
         <span class="hw-day">${esc(item.day)}${item.day === today ? '<span class="week-today">Today</span>' : ''}</span>
         <span class="hw-time">${esc(item.time)}</span>
         <span class="hw-title">${esc(item.title)}</span>
@@ -1132,7 +1171,8 @@ function homeWeekSection(items) {
     </div>
 
     ${editOnly(`<div style="margin-bottom:var(--space-2)">
-      <button type="button" class="edit-chip" data-edit="weekly">${icon('pencil')} Manage the week</button>
+      <button type="button" class="edit-chip" data-edit="event-new-weekly">${icon('plus')} Add a weekly event</button>
+      <button type="button" class="edit-chip" data-edit="events">${icon('pencil')} Manage events</button>
     </div>`)}
 
     ${week.length
@@ -1556,7 +1596,7 @@ async function renderHome() {
   <main id="main" class="page page--home">
     ${heroSection(site)}
     ${featuredEventSection(sorted)}
-    ${homeWeekSection(weekly)}
+    ${homeWeekSection(weekFromEvents(events, weekly))}
     ${upcomingSection(sorted)}
     ${clipsSection(clips)}
     ${manifestoSection(site)}
@@ -1729,7 +1769,8 @@ function rhythmSection(weekly) {
     </p>
 
     ${editOnly(`<div style="margin-top:var(--space-2)">
-      <button type="button" class="edit-chip" data-edit="weekly">${icon('pencil')} Manage the week</button>
+      <button type="button" class="edit-chip" data-edit="event-new-weekly">${icon('plus')} Add a weekly event</button>
+      <button type="button" class="edit-chip" data-edit="events">${icon('pencil')} Manage events</button>
     </div>`)}
   </section>`;
 }
@@ -1778,7 +1819,7 @@ async function renderWhatWeDo() {
       ${programmeTable(programmes)}
     </section>
 
-    ${rhythmSection(weekly)}
+    ${rhythmSection(weekFromEvents(state.events, weekly))}
 
     ${supportSection()}
   </main>`;
@@ -1878,7 +1919,7 @@ async function renderEvents() {
       </div>`)}
     </section>
 
-    ${weeklySection(weekly)}
+    ${weeklySection(weekFromEvents(events, weekly))}
 
     <section class="section shell">${body}</section>
 
@@ -1976,7 +2017,7 @@ async function renderEvent(params) {
     stepping off the end of one into the other is exactly right.
   */
   const ordered = events
-    .filter((record) => record.published !== false)
+    .filter((record) => record.published !== false && !isWeekly(record))
     .sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999'));
   const here = ordered.findIndex((record) => record.id === event.id);
   const previous = here > 0 ? ordered[here - 1] : null;
@@ -1992,7 +2033,9 @@ async function renderEvent(params) {
   */
   state.pageMeta = {
     title: event.title,
-    description: event.summary || `${formatEventDate(event.date)} at ${event.location || 'Edgware Youth'}.`,
+    description: event.summary || (isWeekly(event)
+      ? `Every ${event.day || 'week'} at ${event.location || 'Edgware Youth'}.`
+      : `${formatEventDate(event.date)} at ${event.location || 'Edgware Youth'}.`),
     image: event.imageUrl || event.posterUrl || '',
     type: 'article',
   };
@@ -2006,7 +2049,10 @@ async function renderEvent(params) {
   const hasAside = Boolean(event.posterUrl || event.signUpUrl) || state.authed;
 
   const meta = [
-    date && { label: 'Date', value: date, key: 'event.meta.date' },
+    isWeekly(event) && { label: 'When', value: `Every ${event.day || 'week'}`, key: 'event.meta.weekly' },
+    event.frequency === 'recurring' && event.repeats && { label: 'Repeats', value: event.repeats, key: 'event.meta.repeats' },
+    date && { label: event.frequency === 'recurring' ? 'Next' : 'Date', value: date, key: 'event.meta.date' },
+    event.who && { label: 'Who for', value: event.who, key: 'event.meta.who' },
     event.time && { label: 'Time', value: event.time, key: 'event.meta.time' },
     event.location && { label: 'Where', value: event.location, key: 'event.meta.where' },
   ].filter(Boolean);
@@ -2166,7 +2212,9 @@ function weeklySection(items) {
         <img src="${assetUrl(item.imageUrl, 600)}" alt="${esc(item.imageAlt)}" loading="lazy" decoding="async">
       </div>` : ''}
       ${item.time ? `<p class="session-time">${esc(item.time)}</p>` : ''}
-      <h3 class="session-title">${esc(item.title)}</h3>
+      <h3 class="session-title">${item.slug
+        ? `<a href="/events/${esc(item.slug)}">${esc(item.title)}</a>`
+        : esc(item.title)}</h3>
       ${item.who ? `<p class="session-who">${esc(item.who)}</p>` : ''}
       ${item.location ? `<p class="session-where">${esc(item.location)}</p>` : ''}
       ${item.description ? `<p class="session-desc">${esc(item.description)}</p>` : ''}
@@ -2201,7 +2249,8 @@ function weeklySection(items) {
     </p>
 
     ${editOnly(`<div style="margin-top:var(--space-2)">
-      <button type="button" class="edit-chip" data-edit="weekly">${icon('pencil')} Manage the week</button>
+      <button type="button" class="edit-chip" data-edit="event-new-weekly">${icon('plus')} Add a weekly event</button>
+      <button type="button" class="edit-chip" data-edit="events">${icon('pencil')} Manage events</button>
     </div>`)}
 
     ${week.length
@@ -4771,6 +4820,50 @@ function setAuthed(authed) {
     finishCopyEdit({ save: false });
   }
   renderEditBar();
+  if (authed) setTimeout(migrateWeeklyList, 1200);
+}
+
+/*
+  ONE-TIME MOVE: the weekly programmes used to be a separate list. Now they are
+  events marked Weekly. The first time somebody logs in, any sessions in the
+  old list are added as weekly events — only if there are no weekly events
+  yet, and never one whose name is already an event, so it cannot run twice.
+*/
+let weeklyMigrationRunning = false;
+async function migrateWeeklyList() {
+  if (!state.authed || weeklyMigrationRunning) return;
+  weeklyMigrationRunning = true;
+  try {
+    invalidate('events');
+    const events = await load('events');
+    if (events.some(isWeekly)) return;
+    const legacy = (await load('weekly').catch(() => [])) ?? [];
+    const toAdd = legacy.filter((item) => item.title && !events.some((event) => event.title === item.title));
+    if (!toAdd.length) return;
+    for (const item of toAdd) {
+      await api.post('/api/events', {
+        title: item.title,
+        frequency: 'weekly',
+        day: item.day,
+        time: item.time,
+        who: item.who,
+        location: item.location,
+        summary: item.description,
+        imageUrl: item.imageUrl,
+        imageAlt: item.imageAlt,
+        order: item.order,
+        published: item.published !== false,
+      });
+    }
+    invalidate('events');
+    await load('events');
+    toast(`Added ${toAdd.length} weekly programmes as Weekly events.`);
+    await renderRoute(window.location.pathname, { restoreScroll: true });
+  } catch (error) {
+    toast(`Could not move the weekly programmes into events: ${error.message}`, 'error');
+  } finally {
+    weeklyMigrationRunning = false;
+  }
 }
 
 /** The floating bar along the bottom, visible only once logged in. */
@@ -5065,6 +5158,21 @@ function fieldHtml(field, value) {
                 ${label}
               </div>`;
 
+    case 'tabs': {
+      const current = value || field.options[0][0];
+      return `<div class="field">
+                <span class="field-label">${esc(field.label)}</span>
+                <div class="tabs" role="radiogroup" aria-label="${esc(field.label)}">
+                  ${field.options.map(([optionValue, optionLabel]) => `
+                  <label class="tab">
+                    <input type="radio" name="${esc(field.name)}" value="${esc(optionValue)}"
+                           ${optionValue === current ? 'checked' : ''}>
+                    <span>${esc(optionLabel)}</span>
+                  </label>`).join('')}
+                </div>${hint}
+              </div>`;
+    }
+
     case 'select':
       return `<div class="field">${label}
                 <select id="${id}" name="${esc(field.name)}">
@@ -5102,7 +5210,7 @@ function fieldHtml(field, value) {
         : '';
 
       return `<div class="field">${label}
-                <input id="${id}" name="${esc(field.name)}" type="${field.type === 'number' ? 'number' : 'text'}"
+                <input id="${id}" name="${esc(field.name)}" type="${['number', 'date'].includes(field.type) ? field.type : 'text'}"
                        value="${esc(value ?? '')}" ${listId ? `list="${listId}"` : ''}
                        ${field.placeholder ? `placeholder="${esc(field.placeholder)}"` : ''}>
                 ${options}${hint}</div>`;
@@ -5118,6 +5226,9 @@ function fieldValue(form, field) {
   switch (field.type) {
     case 'checkbox':
       return input.checked;
+
+    case 'tabs':
+      return input.value;
 
     case 'number': {
       const num = Number(input.value);
@@ -5142,9 +5253,16 @@ function fieldValue(form, field) {
   }
 }
 
+/*
+  A field with `when: ['weekly', ...]` only shows while the "How often" tabs
+  are on one of those. The hiding is pure CSS (see .editor-grid:has(...) in
+  styles.css), so it works in every form without any wiring.
+*/
 const buildForm = (fields, record) =>
-  `<div class="editor-grid">${fields.map((field) =>
-    fieldHtml(field, getPath(record ?? {}, field.name))).join('')}</div>`;
+  `<div class="editor-grid">${fields.map((field) => {
+    const html = fieldHtml(field, getPath(record ?? {}, field.name));
+    return field.when ? `<div class="field-when" data-when="${field.when.join(' ')}">${html}</div>` : html;
+  }).join('')}</div>`;
 
 const readForm = (form, fields) =>
   fields.reduce((acc, field) => {
@@ -5453,16 +5571,31 @@ const IMAGE_HINT = 'Paste a Cloudinary URL (or any image link). Cloudinary image
 const EVENT_FIELDS = [
   { name: 'title', label: 'Event name', type: 'text' },
   {
+    name: 'frequency', label: 'How often', type: 'tabs',
+    options: [['one-off', 'One-off'], ['weekly', 'Weekly'], ['recurring', 'Recurring']],
+    hint: 'One-off: happens once. Weekly: every week — it goes in the weekly timetable instead of the event lists. Recurring: comes round again, like once a year.',
+  },
+  { name: 'day', label: 'Which day', type: 'select', options: WEEK_DAYS, when: ['weekly'] },
+  {
+    name: 'repeats', label: 'How often it comes round', type: 'text', when: ['recurring'],
+    placeholder: 'Once a year, Every Ramadan, Every summer',
+  },
+  {
+    name: 'order', label: 'Order within the day', type: 'number', when: ['weekly'],
+    hint: 'Lowest first, when two things happen on the same day.',
+  },
+  {
     name: 'category', label: 'Category', type: 'text',
     suggest: eventCategories,
     hint: 'The small blue label on the card. Pick one of the suggestions or type a new one — it becomes a suggestion for next time. Leave blank for just "Event".',
   },
   {
-    name: 'date', label: 'Date', type: 'text', placeholder: 'YYYY-MM-DD',
-    hint: 'This is the only thing that decides whether the event shows under Upcoming or under Been and gone. It moves itself on the day.',
+    name: 'date', label: 'Date', type: 'date', when: ['one-off', 'recurring'],
+    hint: 'This is the only thing that decides whether the event shows under Upcoming or under Been and gone. It moves itself on the day. For a recurring one, the date of the next one.',
   },
   { name: 'time', label: 'Time', type: 'text', hint: 'Free text — "6–8pm", "after Maghrib", "Three days".' },
   { name: 'location', label: 'Location', type: 'text' },
+  { name: 'who', label: 'Who it is for', type: 'text', placeholder: 'Everyone, Ages 11–16, Brothers 14+' },
   {
     name: 'summary', label: 'Summary', type: 'textarea',
     hint: 'A line or two. Shown on the card and under the headline.',
@@ -5490,7 +5623,7 @@ const EVENT_FIELDS = [
     hint: 'The bit after /events/. Leave blank and it is made from the name.',
   },
   {
-    name: 'featured', label: 'Feature on the homepage', type: 'checkbox',
+    name: 'featured', label: 'Feature on the homepage', type: 'checkbox', when: ['one-off', 'recurring'],
     hint: 'Pins this one to the top of the homepage while it is still to come. With none ticked, the soonest event is used.',
   },
   { name: 'published', label: 'Show on the site', type: 'checkbox' },
@@ -5723,7 +5856,7 @@ const CONTACT_FIELDS = [
  * you are standing on shows the change immediately, and adding one from the
  * events page drops it into the right group on the spot.
  */
-function openEventEditor(id) {
+function openEventEditor(id, preset = {}) {
   const record = id ? (state.events ?? []).find((event) => event.id === id) : {};
   if (!record) {
     toast('That event is no longer there.', 'error');
@@ -5734,7 +5867,7 @@ function openEventEditor(id) {
     title: id ? `Edit — ${record.title || 'event'}` : 'New event',
     fields: EVENT_FIELDS,
     /* A new event is visible by default, the same as the server assumes. */
-    record: id ? record : { published: true },
+    record: id ? record : { published: true, ...preset },
     endpoint: '/api/events',
     method: id ? 'put' : 'post',
     async onDone() {
@@ -5772,14 +5905,15 @@ function mountEditHandlers() {
     /* Straight into a blank form — the common case is adding one, not
        browsing the list first. */
     'event-new': () => openEventEditor(null),
+    'event-new-weekly': () => openEventEditor(null, { frequency: 'weekly', day: 'Monday' }),
 
     events: () => openCollectionManager({
       title: 'Events',
       endpoint: '/api/events',
       cacheKey: 'events',
       fields: EVENT_FIELDS,
-      label: (item) => item.title || item.id,
-      subtitle: 'These are what the menu counts — add one and the number beside Events goes up.',
+      label: (item) => `${item.title || item.id}${isWeekly(item) ? ` — every ${item.day || 'week'}` : item.frequency === 'recurring' ? ` — ${item.repeats || 'recurring'}` : ''}`,
+      subtitle: 'Every event, one-off, weekly and recurring. Weekly ones fill the weekly timetable; the others are dated and counted in the menu.',
     }),
 
     programmes: () => openCollectionManager({

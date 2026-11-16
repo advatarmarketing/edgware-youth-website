@@ -3309,3 +3309,37 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
   .hw-where { grid-area: where; }
   .hw-arrow { grid-area: arrow; align-self: center; }
 }
+
+
+/* ============================================= Event form: "How often" ===== */
+
+/* The three tabs at the top of the event form. */
+.field-label { font-size: var(--micro); font-weight: var(--weight-medium); }
+.tabs {
+  display: inline-flex;
+  border: 1px solid var(--ink);
+  width: fit-content;
+}
+.tab { position: relative; cursor: pointer; }
+.tab input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.tab span {
+  display: block;
+  padding: 10px 18px;
+  font-size: var(--small);
+  font-weight: var(--weight-medium);
+  transition: background var(--dur-fast) var(--ease-ref), color var(--dur-fast) var(--ease-ref);
+}
+.tab + .tab span { border-left: 1px solid var(--ink); }
+.tab input:checked + span { background: var(--ink); color: var(--page); }
+.tab input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: -4px; }
+
+/* Fields that only belong to one kind of event hide themselves for the others. */
+.editor-grid:has(input[name='frequency'][value='one-off']:checked)   .field-when:not([data-when~='one-off']),
+.editor-grid:has(input[name='frequency'][value='weekly']:checked)    .field-when:not([data-when~='weekly']),
+.editor-grid:has(input[name='frequency'][value='recurring']:checked) .field-when:not([data-when~='recurring']) {
+  display: none;
+}
+
+/* A weekly session's name links to its own page. */
+.session-title a { transition: color var(--dur-fast) var(--ease-ref); }
+.session-title a:hover { color: var(--accent); }

@@ -22,10 +22,25 @@
 import { collectionRoute } from '../lib/collection.js';
 import { clean, cleanMultiline, cleanUrl, slugify } from '../lib/http.js';
 
+/*
+  HOW OFTEN an event happens — the tabs at the top of the event form.
+    one-off    happens once, on its date
+    weekly     happens every week on `day`; has no date. These are what fill
+               the weekly timetable (homepage, Events, What We Do).
+    recurring  comes round again ("Once a year", "Every Ramadan"); `repeats`
+               says how often and `date` is the next one.
+*/
+const FREQUENCIES = ['one-off', 'weekly', 'recurring'];
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
 /** Accepts YYYY-MM-DD and nothing else; anything odd is stored as empty. */
 function cleanDate(value) {
   const date = clean(value, 10);
-  return /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : '';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return '';
+  /* A real calendar date too: 2026-27-09 (day and month swapped) is refused. */
+  const [y, m, d] = date.split('-').map(Number);
+  const check = new Date(Date.UTC(y, m - 1, d));
+  return check.getUTCFullYear() === y && check.getUTCMonth() === m - 1 && check.getUTCDate() === d ? date : '';
 }
 
 export default collectionRoute({
@@ -58,7 +73,15 @@ export default collectionRoute({
       */
       category: clean(event.category, 60),
 
-      date: cleanDate(event.date),          // YYYY-MM-DD. The only fact about when.
+      frequency: FREQUENCIES.includes(event.frequency) ? event.frequency : 'one-off',
+      day: DAYS.includes(event.day) ? event.day : '',            // weekly only
+      repeats: clean(event.repeats, 60),                         // recurring only
+      who: clean(event.who, 80),                                 // "Ages 11–16", "Brothers"
+      /* Order within the same day, for weekly ones. Lowest first. */
+      order: Number.isFinite(Number(event.order)) ? Number(event.order) : 0,
+
+      /* A weekly event has no date — it is every week. */
+      date: event.frequency === 'weekly' ? '' : cleanDate(event.date),
       time: clean(event.time, 40),          // free text: "6–8pm", "after Maghrib"
       location: clean(event.location, 160),
 
