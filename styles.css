@@ -1489,15 +1489,31 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
   becomes unreadable the moment the footage cuts to something pale — and you
   cannot know in advance what the footage does.
 */
+/*
+  Two layers in one. The highlight reel has words burned into it almost the
+  whole way through (subtitles, "FIRST: Quran", the "Edgware's Youth Event"
+  title card), and grey words behind big white words fight each other. So:
+    - left to right: darkest under the title, which sits on the left, easing
+      off towards the right so the footage still shows there;
+    - top to bottom: a steady shade, deepest at the foot under the strapline.
+  To lighten the whole thing, lower the numbers; to darken, raise them.
+*/
 .hero-scrim {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(10, 10, 10, 0.45) 0%,
-    rgba(10, 10, 10, 0.15) 35%,
-    rgba(10, 10, 10, 0.65) 100%
-  );
+  background:
+    linear-gradient(
+      to right,
+      rgba(10, 10, 10, 0.64) 0%,
+      rgba(10, 10, 10, 0.52) 50%,
+      rgba(10, 10, 10, 0.12) 90%
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(10, 10, 10, 0.40) 0%,
+      rgba(10, 10, 10, 0.25) 40%,
+      rgba(10, 10, 10, 0.70) 100%
+    );
 }
 
 /* No film yet: no wash either, or the placeholder sits under a grey veil. */
@@ -1538,6 +1554,13 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
 .hero[data-has-media='true'] .hero-label { color: var(--page); }
 
 .hero-title { margin-top: var(--space-1); }
+
+/* A soft dark glow behind the letters over film — it separates the white
+   title from anything light behind it without looking like a drop shadow. */
+.hero[data-has-media='true'] .hero-title,
+.hero[data-has-media='true'] .hero-strap {
+  text-shadow: 0 0 40px rgba(10, 10, 10, 0.55), 0 2px 12px rgba(10, 10, 10, 0.35);
+}
 
 .hero-strap {
   max-width: 34ch;

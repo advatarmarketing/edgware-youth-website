@@ -1194,15 +1194,23 @@ eight seconds, so nobody is ever stuck on it.
 
 ## Keeping the hero title readable
 
-Some moments in the homepage video are very bright — the white "Edgware's
-Youth Event" title card, for example — and the big white EDGWARE YOUTH would
-disappear into them. So the site watches the video while it plays and, when
-the part behind the title gets bright or has a lot of white in it, fades in an
-extra dark layer. On ordinary footage it is invisible.
+The homepage highlight reel has words burned into it almost the whole way
+through: subtitles, "FIRST: Quran", the "Edgware's Youth Event" title card.
+Grey words sitting behind the big white EDGWARE YOUTH fight with it.
 
-This works for videos hosted on Cloudinary (it needs the host's permission to
-look at the picture, which Cloudinary gives). The strongest it gets is set by
-the `0.6` in `.hero-dim` in `styles.css` — raise it to darken more.
+Three things keep the title on top:
+
+1. **A shade over the whole film**, darkest on the left under the title and
+   easing off to the right so the footage still shows there (`.hero-scrim`
+   in `styles.css` — raise the numbers to darken, lower them to lighten).
+2. **A soft dark glow behind the title letters** themselves.
+3. **Extra darkening for very bright moments.** The site watches the video
+   while it plays and, when the part behind the title turns very bright (a
+   white flash, a pale wall), fades in a further dark layer. This works for
+   Cloudinary videos. The strongest it gets is the `0.6` in `.hero-dim`.
+
+If you swap in a different hero video with less text in it, you can lighten
+the shade in step 1.
 
 ---
 
