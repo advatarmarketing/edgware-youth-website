@@ -191,5 +191,118 @@
     }
   ],
   "//clips": "Short films for the Recent clips grid on the homepage. That section hides itself completely while this is empty.",
-  "clips": []
+  "clips": [],
+  "//weekly": "Every session that happens each week. Shown on Events and What We Do. Edit from \"Manage the week\" on the Events page.",
+  "weekly": [
+    {
+      "id": "weekly-seed-1",
+      "title": "Weekly halaqa",
+      "day": "Monday",
+      "time": "7.00 – 8.30pm",
+      "who": "Brothers 14+",
+      "location": "Edgware",
+      "description": "A short reminder, a discussion, and tea afterwards.",
+      "imageUrl": "",
+      "imageAlt": "",
+      "order": 1,
+      "published": true
+    },
+    {
+      "id": "weekly-seed-2",
+      "title": "Sports and socials",
+      "day": "Wednesday",
+      "time": "6.30 – 8.00pm",
+      "who": "Everyone",
+      "location": "Edgware",
+      "description": "Football, games and time together.",
+      "imageUrl": "",
+      "imageAlt": "",
+      "order": 2,
+      "published": true
+    },
+    {
+      "id": "weekly-seed-3",
+      "title": "Youth club",
+      "day": "Friday",
+      "time": "6.00 – 8.00pm",
+      "who": "Ages 11–16",
+      "location": "Edgware",
+      "description": "The weekly club night.",
+      "imageUrl": "",
+      "imageAlt": "",
+      "order": 3,
+      "published": true
+    }
+  ],
+  "//archive": "Old event posters for the \"Previous events\" collage on Events. Starts empty.",
+  "archive": [],
+  "//timeline": "The About page timeline. PLACEHOLDER TEXT — rewrite it from \"Manage the timeline\" on the About page.",
+  "timeline": [
+    {
+      "id": "moment-seed-1",
+      "phase": "Past",
+      "when": "Year",
+      "title": "How it started",
+      "text": "Placeholder — a few lines about how Edgware Youth began: who started it, where, and why.",
+      "imageUrl": "",
+      "imageAlt": "",
+      "order": 1,
+      "published": true
+    },
+    {
+      "id": "moment-seed-2",
+      "phase": "Past",
+      "when": "Year",
+      "title": "The first big step",
+      "text": "Placeholder — a milestone from the early years. The first event, the first trip, the first hall.",
+      "imageUrl": "",
+      "imageAlt": "",
+      "order": 2,
+      "published": true
+    },
+    {
+      "id": "moment-seed-3",
+      "phase": "Past",
+      "when": "Year",
+      "title": "Growing",
+      "text": "Placeholder — when things grew: more young people, more volunteers, more going on each week.",
+      "imageUrl": "",
+      "imageAlt": "",
+      "order": 3,
+      "published": true
+    },
+    {
+      "id": "moment-seed-4",
+      "phase": "Present",
+      "when": "Today",
+      "title": "Where we are now",
+      "text": "Placeholder — what Edgware Youth looks like today: the weekly sessions, the events, the people.",
+      "imageUrl": "",
+      "imageAlt": "",
+      "order": 4,
+      "published": true
+    },
+    {
+      "id": "moment-seed-5",
+      "phase": "Future",
+      "when": "Goal",
+      "title": "Our next goal",
+      "text": "Placeholder — something we are working towards in the next year or two.",
+      "imageUrl": "",
+      "imageAlt": "",
+      "order": 5,
+      "published": true
+    },
+    {
+      "id": "moment-seed-6",
+      "phase": "Future",
+      "when": "Goal",
+      "title": "The bigger picture",
+      "text": "Placeholder — the long-term vision. A space of our own, more programmes, more of the community reached.",
+      "imageUrl": "",
+      "imageAlt": "",
+      "order": 6,
+      "published": true
+    }
+  ]
 }

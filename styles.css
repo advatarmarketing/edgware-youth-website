@@ -763,6 +763,20 @@ html[data-loading] .preloader {
   height: auto;
 }
 
+/*
+  THE LOADING FILL. Two copies of the logo stacked: the bottom one turned grey
+  (the "not loaded yet" state), the top one white and cut off from the right
+  by --load, which the little script in index.html moves from 0 to 1 as the
+  site loads. Fully white = finished.
+*/
+.preloader-mark { position: relative; }
+.preloader-logo--base { filter: grayscale(1) brightness(0.62); opacity: 0.85; }
+.preloader-logo--fill {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(0 calc((1 - var(--load, 0)) * 100%) 0 0);
+}
+
 /* Nothing scrolls while the panel is up. */
 html[data-loading] body { overflow: hidden; }
 
@@ -1488,6 +1502,19 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
 
 /* No film yet: no wash either, or the placeholder sits under a grey veil. */
 .hero[data-has-media='false'] .hero-scrim { display: none; }
+
+/* The extra darkening for bright moments in the film. app.js sets its opacity
+   from 0 (invisible) to 1; the transition stops it flickering frame to frame.
+   To make it darker or lighter at its strongest, change the 0.6 below. */
+.hero-dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 10, 0.6);
+  opacity: 0;
+  transition: opacity 0.6s var(--ease-ref);
+  pointer-events: none;
+}
+.hero[data-has-media='false'] .hero-dim { display: none; }
 
 .hero-empty {
   position: absolute;
@@ -2776,4 +2803,289 @@ body[data-copy-editing='true'] [data-copy]:hover { outline-color: var(--accent);
   .donate-card { flex-basis: calc((100% - var(--space-1)) / 2); padding-inline: 10px; }
   .donate-card-btn { padding: 0 14px; gap: 6px; font-size: var(--micro); }
   .ways-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+
+/* ===================================================== The week ========== */
+
+/*
+  "Every week" on the Events page. Seven columns, Monday to Sunday, with
+  today's column marked in blue. On a phone, empty days drop out and the rest
+  stack as a list starting with today (the order comes from --phone-order,
+  written by app.js).
+*/
+.week-lede { max-width: 52ch; margin-top: var(--space-1); }
+
+.week-grid {
+  margin-top: var(--space-3);
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border-top: 1px solid var(--ink);
+}
+
+.week-day {
+  padding: var(--space-1) 12px var(--space-2);
+  border-right: 1px solid var(--hairline);
+  min-height: 220px;
+}
+.week-day:last-child { border-right: 0; }
+.week-day[data-today='true'] { background: var(--accent-soft); }
+
+.week-day-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--small);
+  font-weight: var(--weight-medium);
+  text-transform: uppercase;
+  margin-bottom: var(--space-1);
+}
+.week-today {
+  font-size: var(--label);
+  letter-spacing: var(--track-label);
+  padding: 3px 8px;
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+.week-none { color: var(--ink-60); }
+
+.week-sessions { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-2); }
+
+.session-media { aspect-ratio: 4 / 3; overflow: hidden; margin-bottom: 10px; }
+.session-media img { width: 100%; height: 100%; object-fit: cover; }
+.session-time { font-size: var(--micro); color: var(--accent-on-wash); font-weight: var(--weight-medium); }
+.session-title { font-size: var(--heading); font-weight: var(--weight-medium); line-height: 1.1; margin-top: 4px; }
+.session-who,
+.session-where { font-size: var(--micro); color: var(--ink-70); margin-top: 4px; }
+.session-desc { font-size: var(--small); color: var(--ink-70); margin-top: 8px; line-height: var(--line-body); }
+
+.week-note { margin-top: var(--space-2); color: var(--ink-60); max-width: 68ch; }
+
+@media (max-width: 1000px) {
+  .week-grid { display: flex; flex-direction: column; border-top: 0; }
+  .week-day {
+    order: var(--phone-order, 0);
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr);
+    gap: var(--space-1);
+    min-height: 0;
+    border-right: 0;
+    border-top: 1px solid var(--ink);
+    padding: var(--space-1) 0 var(--space-2);
+  }
+  .week-day[data-today='true'] { padding-inline: 12px; }
+  .week-day[data-empty='true'] { display: none; }
+}
+@media (max-width: 600px) {
+  .week-day { grid-template-columns: minmax(0, 1fr); gap: 0; }
+}
+
+
+/* ============================================== Previous events wall ===== */
+
+/*
+  A collage: CSS columns let every poster keep its own shape (portrait,
+  square, landscape) and pack tightly, with no cropping.
+*/
+.archive-lede { max-width: 52ch; margin-top: var(--space-1); }
+
+.poster-wall {
+  list-style: none;
+  padding: 0;
+  margin-top: var(--space-3);
+  columns: 5 180px;
+  column-gap: 12px;
+}
+
+.poster {
+  break-inside: avoid;
+  margin-bottom: 12px;
+  background: var(--accent-soft);
+}
+.poster img { display: block; width: 100%; height: auto; }
+
+.poster-btn {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  overflow: hidden;
+  text-align: left;
+}
+.poster-btn img { transition: transform var(--dur-base) var(--ease-ref); }
+
+/* The name of the event slides up over the poster on hover or keyboard focus.
+   On a touch screen it is always showing, so people know it opens. */
+.poster-more {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--brand);
+  color: var(--on-brand);
+  font-size: var(--small);
+  font-weight: var(--weight-medium);
+  transform: translateY(100%);
+  transition: transform var(--dur-fast) var(--ease-ref);
+}
+.poster-more .icon { width: 16px; height: 16px; flex: none; }
+.poster-btn:hover .poster-more,
+.poster-btn:focus-visible .poster-more { transform: none; }
+.poster-btn:hover img { transform: scale(1.03); }
+@media (hover: none) { .poster-more { transform: none; } }
+
+@media (max-width: 600px) {
+  .poster-wall { columns: 2; column-gap: 8px; }
+  .poster { margin-bottom: 8px; }
+  .poster-more { font-size: var(--micro); padding: 8px 10px; }
+}
+
+/* One poster, opened. */
+.modal--poster { width: min(960px, 100%); }
+.poster-detail { display: grid; gap: var(--space-2); }
+.poster-detail-poster { width: 100%; max-height: 75vh; object-fit: contain; background: var(--accent-soft); }
+.poster-detail-text { display: grid; gap: 12px; max-width: 62ch; line-height: var(--line-loose); }
+.poster-detail-text:empty { display: none; }
+.poster-detail-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+}
+.poster-detail-media { width: 100%; height: auto; display: block; }
+
+
+/* ============================================================ About ====== */
+
+/*
+  THE TIMELINE. A grey line down the middle; a blue line draws down over it
+  as you scroll (app.js sets its scaleY from 0 to 1). Each moment's dot and
+  card light up when the blue line reaches them.
+*/
+.timeline-section { padding-bottom: var(--space-5); }
+
+.timeline { position: relative; margin-top: var(--space-3); }
+
+.tl-line {
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--hairline);
+}
+.tl-line-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transform: scaleY(0);
+  transform-origin: top;
+  will-change: transform;
+}
+
+.tl-list { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-3); }
+
+/* "Where we came from" / "Where we are" / "Where we are going", centred on
+   the line with the page colour behind them so the line passes underneath. */
+.tl-phase {
+  position: relative;
+  justify-self: center;
+  text-align: center;
+  background: var(--page);
+  padding: var(--space-1) var(--space-2);
+  z-index: 1;
+}
+.tl-phase-title {
+  font-size: var(--display-4);
+  font-weight: var(--weight-medium);
+  line-height: var(--line-head);
+  text-transform: uppercase;
+  margin-top: 8px;
+}
+
+.tl-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: var(--space-3);
+}
+.tl-item[data-side='left'] .tl-card { grid-column: 1; text-align: right; }
+.tl-item[data-side='right'] .tl-card { grid-column: 2; }
+
+.tl-dot {
+  position: absolute;
+  left: 50%;
+  top: 28px;
+  width: 16px;
+  height: 16px;
+  margin-left: -8px;
+  border-radius: 50%;
+  background: var(--page);
+  border: 2px solid var(--hairline);
+  z-index: 1;
+  transition: background var(--dur-base) var(--ease-ref), border-color var(--dur-base) var(--ease-ref),
+              transform var(--dur-base) var(--ease-ref);
+}
+.tl-item[data-lit='true'] .tl-dot { background: var(--accent); border-color: var(--accent); transform: scale(1.15); }
+
+/* The present: a ring pulses out from its dot, once lit. */
+.tl-item[data-phase='Present'][data-lit='true'] .tl-dot::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  animation: tl-pulse 2s var(--ease-ref) infinite;
+}
+@keyframes tl-pulse {
+  from { transform: scale(1); opacity: 0.8; }
+  to   { transform: scale(2.6); opacity: 0; }
+}
+
+.tl-card {
+  padding: var(--space-2);
+  border: 1px solid var(--hairline);
+  background: var(--page);
+  opacity: 0.35;
+  transform: translateY(24px);
+  transition: opacity var(--dur-base) var(--ease-ref), transform var(--dur-base) var(--ease-ref),
+              border-color var(--dur-base) var(--ease-ref);
+}
+.tl-item[data-lit='true'] .tl-card { opacity: 1; transform: none; border-color: var(--ink); }
+
+/* The future has not happened yet: a dashed edge, a blue wash. */
+.tl-item[data-phase='Future'] .tl-card { border-style: dashed; }
+.tl-item[data-phase='Future'][data-lit='true'] .tl-card { border-color: var(--accent); background: var(--accent-soft); }
+
+.tl-when {
+  font-size: var(--label);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--accent-on-wash);
+  font-weight: var(--weight-medium);
+}
+.tl-title { font-size: var(--display-4); font-weight: var(--weight-medium); line-height: var(--line-head); margin-top: 8px; text-transform: uppercase; }
+.tl-text { margin-top: 12px; color: var(--ink-70); line-height: var(--line-loose); }
+.tl-media { margin-top: var(--space-1); aspect-ratio: 16 / 10; overflow: hidden; }
+.tl-media img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Phones: the line moves to the left edge and everything stacks to its right. */
+@media (max-width: 767px) {
+  .tl-line { left: 8px; }
+  .tl-phase { justify-self: start; text-align: left; padding: 8px 0 8px 32px; background: none; }
+  .tl-item { grid-template-columns: minmax(0, 1fr); padding-left: 32px; }
+  .tl-item[data-side] .tl-card { grid-column: 1; text-align: left; }
+  .tl-dot { left: 8px; }
+  .tl-card { padding: var(--space-1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tl-card { transform: none; transition: none; }
+  .tl-item[data-phase='Present'] .tl-dot::after { animation: none; }
 }

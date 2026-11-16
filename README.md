@@ -1124,6 +1124,88 @@ Delete all three once there are real ones.
 
 ---
 
+
+## The weekly timetable
+
+Everything that happens **every week** lives in one list, and the site uses
+it in two places, so you only ever change a time once:
+
+* **Events page → "Every week"** — the full timetable. Seven columns, Monday to
+  Sunday, with today's column shaded and marked **Tonight** (or **Today** if
+  nothing is on). On a phone, empty days are hidden and the list starts with
+  today, so the first thing someone sees is what's on tonight.
+* **What We Do → "The week"** — the short version: day, time, name and who it
+  is for.
+
+**To change it:** log in, go to Events, press **Manage the week**. Each session
+has: what it is, the day (pick from the list), the time (any wording — "7.00 –
+8.30pm", "After Maghrib"), who it is for, where, a line or two about it, and
+an optional picture. Untick *Show on the site* to hide one for a while without
+deleting it — over Ramadan, say.
+
+One-off things (a talk, a trip) are still **events**, added with *Add event*.
+The week is only for what repeats.
+
+## Previous events — the poster wall
+
+At the bottom of the Events page, a collage of old event posters. Posters keep
+their own shape — portrait, square or landscape — and pack together.
+
+**To add posters:** log in, go to Events, press **Add posters**, and paste
+Cloudinary links into the box, **one per line**. Paste fifty at once if you
+like. Each becomes a poster on the wall, in the order you pasted them. That is
+all a poster needs.
+
+**To make a poster clickable:** press **Manage posters**, open one, and fill
+in any of: the event name, when it was, details, or more pictures/films (one
+link per line). As soon as it has any of those, the poster can be clicked and
+opens up with everything you added. Posters with nothing added are shown but
+are not clickable — there would be nothing to open. On a computer the event's
+name slides up over the poster when you point at it.
+
+The up and down arrows in **Manage posters** move a poster around the wall.
+
+## The About page and its timeline
+
+The page is an opening paragraph followed by a **timeline** in three parts:
+**Past** ("Where we came from"), **Present** ("Where we are") and **Future &
+goals** ("Where we are going").
+
+As you scroll, a blue line draws itself down the middle and each moment
+lights up as the line reaches it. The present moment's dot pulses. Future
+moments have a dashed edge, because they have not happened yet. On a phone the
+line moves to the left and everything stacks to its right.
+
+**Everything in it is placeholder text.** To replace it:
+
+* The heading, the opening paragraph and the three part titles are page text —
+  switch on **Edit text** and click them.
+* The moments themselves: press **Manage the timeline**. Each one has *Past,
+  present or future*, *When* ("2016", "Today", "By 2028"), a title, the text,
+  and an optional picture. *Order* puts them in order within their part.
+
+## The loading screen
+
+When the homepage first opens, the blue loading screen shows the logo in
+grey, and it fills with white from left to right as the site actually loads
+(the code, the wording, the events, then the page itself). It lifts away the
+moment the logo is fully white. If anything goes wrong it lifts anyway after
+eight seconds, so nobody is ever stuck on it.
+
+## Keeping the hero title readable
+
+Some moments in the homepage video are very bright — the white "Edgware's
+Youth Event" title card, for example — and the big white EDGWARE YOUTH would
+disappear into them. So the site watches the video while it plays and, when
+the part behind the title gets bright or has a lot of white in it, fades in an
+extra dark layer. On ordinary footage it is invisible.
+
+This works for videos hosted on Cloudinary (it needs the host's permission to
+look at the picture, which Cloudinary gives). The strongest it gets is set by
+the `0.6` in `.hero-dim` in `styles.css` — raise it to darken more.
+
+---
+
 ## Support Us
 
 The donation page, at `/support`. The "Support Us" button in the header, the
@@ -1536,9 +1618,11 @@ hand — the next `npm install` will overwrite it.
 
 Honest list, so nothing is a surprise later:
 
-* **Two pages are still placeholders**: About and Contact. The homepage, What
-  We Do, the events listing, the page for one event and Support Us are all
+* **One page is still a placeholder**: Contact. The homepage, What We Do,
+  the events listing, the page for one event, About and Support Us are all
   real.
+* **The About page is all placeholder text.** The structure is finished; every
+  word in it is waiting for you — see "The About page and its timeline".
 * **A programme's description is not shown on a desktop.** The row is two
   columns by design — name and type — so the line you write only appears on a
   phone. If you want it on the desktop row too, say so: it is a few lines.

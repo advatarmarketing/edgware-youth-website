@@ -89,6 +89,33 @@
       root.setAttribute('data-loading', '');
       setTimeout(function () { root.removeAttribute('data-loading'); }, 8000);
     }
+
+    /*
+      THE LOADING FILL. The logo on the loading screen starts grey and fills
+      with white, left to right, as the site actually loads. app.js calls
+      eyLoader.to(0.4), eyLoader.to(0.65)... as each real step finishes; in
+      between, the fill creeps forward on its own so it never looks stuck.
+      eyLoader.finish() runs it to 100% and only THEN lets the screen lift —
+      so it is always completely white the moment loading is done.
+    */
+    var target = 0.06, shown = 0, done = null;
+    function frame() {
+      var mark = document.querySelector('.preloader');
+      if (target < 0.88 && !done) target += 0.0012;           // the gentle creep
+      shown += (target - shown) * (done ? 0.22 : 0.08);       // ease towards it
+      if (mark) mark.style.setProperty('--load', shown.toFixed(4));
+      if (done && shown > 0.995) {
+        if (mark) mark.style.setProperty('--load', '1');
+        var callback = done; done = null; callback();
+        return;
+      }
+      if (root.hasAttribute('data-loading')) requestAnimationFrame(frame);
+    }
+    window.eyLoader = {
+      to: function (value) { if (value > target) target = value; },
+      finish: function (callback) { target = 1; done = callback; },
+    };
+    if (root.hasAttribute('data-loading')) requestAnimationFrame(frame);
   })();
 </script>
 
@@ -107,7 +134,12 @@
   that attribute off when the first page is ready, and it slides up and away.
 -->
 <div class="preloader" aria-hidden="true">
-  <img class="preloader-logo" src="/assets/logo-light.png" alt="" width="412" height="242" decoding="async">
+  <!-- Two copies of the logo, one on top of the other: a grey one, and a white
+       one that is revealed left to right as the site loads (--load, 0 to 1). -->
+  <div class="preloader-mark">
+    <img class="preloader-logo preloader-logo--base" src="/assets/logo-light.png" alt="" width="412" height="242" decoding="async">
+    <img class="preloader-logo preloader-logo--fill" src="/assets/logo-light.png" alt="" width="412" height="242" decoding="async">
+  </div>
 </div>
 
 <!--

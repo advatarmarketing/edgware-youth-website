@@ -180,6 +180,9 @@ const state = {
   events: null,          // the events list — the menu counts these
   programmes: null,      // the rows in the table on What We Do
   clips: null,           // short films for the homepage grid
+  weekly: null,          // every session that happens each week
+  archive: null,         // old event posters, for the Previous events wall
+  timeline: null,        // the About page timeline
   pageMeta: null,        // a page's own title/description/picture, when it has one
   copyEditing: false,    // is "Edit text" switched on right now?
   authed: false,         // is there a valid edit-mode session?
@@ -193,6 +196,10 @@ const CACHE_KEYS = {
   events: '/api/events',
   programmes: '/api/programmes',
   clips: '/api/clips',
+  /* Three lists served by one function — see api/lists/[list].js. */
+  weekly: '/api/lists/weekly',
+  archive: '/api/lists/archive',
+  timeline: '/api/lists/timeline',
 };
 
 /** How each endpoint's reply is unwrapped. Lists come back as { items }. */
@@ -1031,6 +1038,7 @@ function heroSection(settings) {
         difference between a hero and a blank rectangle.
       -->
       <video class="hero-video" muted loop playsinline preload="none"
+             ${/res\.cloudinary\.com/i.test(video) ? 'crossorigin="anonymous"' : ''}
              ${poster ? `poster="${assetUrl(poster, 1920)}"` : ''} aria-hidden="true">
         <source src="${assetUrl(video)}">
       </video>
@@ -1051,6 +1059,12 @@ function heroSection(settings) {
 
     <!-- A wash over the film, so white text stays readable whatever is behind it. -->
     <div class="hero-scrim" aria-hidden="true"></div>
+
+    <!-- An EXTRA darkening layer that only appears when the footage behind the
+         title gets bright or busy (a white title card, a pale wall). app.js
+         measures the film a few times a second and fades this in and out —
+         see watchHeroBrightness(). -->
+    <div class="hero-dim" data-hero-dim aria-hidden="true"></div>
 
     <div class="hero-inner shell">
       <p class="label hero-label" data-reveal="text" data-copy="home.hero.label">Edgware, London</p>
@@ -1587,12 +1601,16 @@ function programmeTable(programmes) {
 /* --------------------------------------------------------- Weekly rhythm --- */
 
 /*
-  The week, under the table. Stored as a list rather than as page text because
-  the number of lines changes — edit mode shows the whole thing as one box, a
-  line per row, columns separated by a bar.
+  The week, under the table — a short version of the "Every week" timetable
+  on the Events page. Both read the SAME list (/api/lists/weekly), so a time
+  changed once is changed everywhere. Edit it from "Manage the week".
 */
-function rhythmSection(settings) {
-  const rows = settings.rhythm ?? [];
+function rhythmSection(weekly) {
+  const rows = sortedWeek(weekly).map((item) => ({
+    day: item.day,
+    time: item.time,
+    detail: item.who ? `${item.title} · ${item.who}` : item.title,
+  }));
 
   const list = rows.length
     ? `<dl class="rhythm-list">${rows.map((entry, index) => `
@@ -1603,7 +1621,7 @@ function rhythmSection(settings) {
         </div>`).join('')}</dl>`
     : emptyState(
         'The week is not filled in yet',
-        'Add a line per session — the day, the time, and what happens — and they appear here.'
+        'Add each weekly session from "Manage the week" and it appears here and on the Events page.'
       );
 
   return `
@@ -1628,7 +1646,7 @@ function rhythmSection(settings) {
     </p>
 
     ${editOnly(`<div style="margin-top:var(--space-2)">
-      <button type="button" class="edit-chip" data-edit="rhythm">${icon('pencil')} Edit the week</button>
+      <button type="button" class="edit-chip" data-edit="weekly">${icon('pencil')} Manage the week</button>
     </div>`)}
   </section>`;
 }
@@ -1639,9 +1657,10 @@ function rhythmSection(settings) {
   heading, the table itself, and the week underneath it.
 */
 async function renderWhatWeDo() {
-  const [settings, programmes] = await Promise.all([
+  const [settings, programmes, weekly] = await Promise.all([
     load('settings').catch(() => ({})),
     load('programmes').catch(() => []),
+    load('weekly').catch(() => []),
   ]);
 
   const site = settings ?? {};
@@ -1676,7 +1695,7 @@ async function renderWhatWeDo() {
       ${programmeTable(programmes)}
     </section>
 
-    ${rhythmSection(site)}
+    ${rhythmSection(weekly)}
 
     ${supportSection()}
   </main>`;
@@ -1716,7 +1735,11 @@ function eventGroup({ key, heading, events, copyKey }) {
 }
 
 async function renderEvents() {
-  const events = (await load('events').catch(() => [])) ?? [];
+  const [events, weekly, archive] = (await Promise.all([
+    load('events').catch(() => []),
+    load('weekly').catch(() => []),
+    load('archive').catch(() => []),
+  ])).map((list) => list ?? []);
   const { upcoming, past } = sortEvents(events);
   const total = upcoming.length + past.length;
 
@@ -1772,7 +1795,11 @@ async function renderEvents() {
       </div>`)}
     </section>
 
+    ${weeklySection(weekly)}
+
     <section class="section shell">${body}</section>
+
+    ${archiveSection(archive)}
   </main>`;
 }
 
@@ -2008,14 +2035,362 @@ async function renderEvent(params) {
   </main>`;
 }
 
-async function renderAbout() {
-  return placeholderPage({
-    key: 'about',
-    label: 'About us',
-    title: 'Who we are',
-    lede: 'Run by volunteers, for the young people of Edgware and the families around them.',
+/* ============================================================ The week === */
+
+/*
+  THE WEEK — the single list of everything that happens every week.
+
+  This is the site's one source for the weekly timetable. It is shown in full
+  on the Events page ("Every week"), and as the short list on What We Do, so
+  changing a time in one place changes it everywhere. Edit it from "Manage the
+  week" on the Events page.
+*/
+const WEEK_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+/** Today's name, Monday-first, in UK time — so "Tonight" is right for London. */
+function todayName() {
+  const name = new Intl.DateTimeFormat('en-GB', { weekday: 'long', timeZone: 'Europe/London' }).format(new Date());
+  return WEEK_DAYS.includes(name) ? name : '';
+}
+
+/** The published sessions, in day order, then by their own order number. */
+function sortedWeek(items) {
+  return (items ?? [])
+    .filter((item) => item.published !== false && item.title)
+    .sort((a, b) =>
+      WEEK_DAYS.indexOf(a.day) - WEEK_DAYS.indexOf(b.day) || (a.order ?? 0) - (b.order ?? 0));
+}
+
+/*
+  The Events page's "Every week" timetable.
+
+  Desktop: seven columns, Monday to Sunday, every session sitting under its
+  day, and today's column marked. Days with nothing on are still drawn — a
+  quiet column is information too ("nothing on Tuesdays").
+  Phone: the empty days drop out and it becomes a list grouped by day,
+  starting with today, so the first thing on a phone is "what's on tonight".
+*/
+function weeklySection(items) {
+  const week = sortedWeek(items);
+  const today = todayName();
+
+  if (!week.length && !state.authed) return '';
+
+  const session = (item) => `
+    <li class="session" data-reveal="text">
+      ${item.imageUrl ? `
+      <div class="session-media">
+        <img src="${assetUrl(item.imageUrl, 600)}" alt="${esc(item.imageAlt)}" loading="lazy" decoding="async">
+      </div>` : ''}
+      ${item.time ? `<p class="session-time">${esc(item.time)}</p>` : ''}
+      <h3 class="session-title">${esc(item.title)}</h3>
+      ${item.who ? `<p class="session-who">${esc(item.who)}</p>` : ''}
+      ${item.location ? `<p class="session-where">${esc(item.location)}</p>` : ''}
+      ${item.description ? `<p class="session-desc">${esc(item.description)}</p>` : ''}
+    </li>`;
+
+  /* Phone order: today first, then on round the week. */
+  const start = Math.max(0, WEEK_DAYS.indexOf(today));
+  const phoneOrder = [...WEEK_DAYS.slice(start), ...WEEK_DAYS.slice(0, start)];
+
+  const days = WEEK_DAYS.map((day) => {
+    const sessions = week.filter((item) => item.day === day);
+    const isToday = day === today;
+    return `
+      <div class="week-day" data-today="${isToday}" data-empty="${sessions.length ? 'false' : 'true'}"
+           style="--phone-order:${phoneOrder.indexOf(day)}">
+        <p class="week-day-name">
+          <span>${esc(day)}</span>
+          ${isToday ? `<span class="week-today">${sessions.length ? 'Tonight' : 'Today'}</span>` : ''}
+        </p>
+        ${sessions.length
+          ? `<ul class="week-sessions">${sessions.map(session).join('')}</ul>`
+          : '<p class="week-none" aria-hidden="true">—</p>'}
+      </div>`;
+  }).join('');
+
+  return `
+  <section class="section shell week" id="every-week" aria-labelledby="week-title">
+    <p class="label" data-reveal="text" data-copy="events.week.label">Every week</p>
+    <h2 class="display-3" id="week-title" data-reveal="text" data-copy="events.week.title">The week at Edgware Youth</h2>
+    <p class="prose week-lede" data-reveal="text" data-copy="events.week.lede">
+      Most of what we do happens on the same day every week. Just turn up — no booking needed.
+    </p>
+
+    ${editOnly(`<div style="margin-top:var(--space-2)">
+      <button type="button" class="edit-chip" data-edit="weekly">${icon('pencil')} Manage the week</button>
+    </div>`)}
+
+    ${week.length
+      ? `<div class="week-grid">${days}</div>`
+      : emptyState('Nothing in the week yet', 'Add each session that happens every week — the day, the time and what it is — and the timetable appears here and on What We Do.')}
+
+    <p class="tiny week-note" data-reveal="text" data-copy="events.week.note">
+      Times can change around Ramadan and the school holidays — anything different is posted as an event above.
+    </p>
+  </section>`;
+}
+
+
+/* ===================================================== Previous events === */
+
+/*
+  THE POSTER WALL — "Previous events", at the bottom of the Events page.
+
+  Adding one is just pasting a poster's Cloudinary link ("Add posters" takes
+  as many links as you like at once, one per line). That alone puts it on the
+  wall. Give it a title, some details or more pictures later ("Manage
+  posters") and it becomes clickable, opening everything about that night.
+
+  The wall is a collage: posters keep their own shape (portrait, square,
+  landscape) and pack into columns, rather than being cropped to one size.
+*/
+const archiveHasDetails = (item) =>
+  Boolean(item.title || item.details || item.date || item.media?.length);
+
+function archiveSection(items) {
+  const posters = (items ?? [])
+    .filter((item) => item.published !== false && item.posterUrl)
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  if (!posters.length && !state.authed) return '';
+
+  const tile = (item, index) => {
+    const image = `<img src="${assetUrl(item.posterUrl, 700)}" alt="${esc(item.alt || item.title || 'Event poster')}"
+                        loading="lazy" decoding="async">`;
+    return archiveHasDetails(item)
+      ? `<li class="poster" data-reveal style="--i:${index % 6}">
+           <button type="button" class="poster-btn" data-poster="${esc(item.id)}"
+                   aria-label="${esc(item.title || 'Event poster')} — see details">
+             ${image}
+             <span class="poster-more" aria-hidden="true">${esc(item.title || 'See more')} ${icon('arrowRight')}</span>
+           </button>
+         </li>`
+      : `<li class="poster poster--plain" data-reveal style="--i:${index % 6}">${image}</li>`;
+  };
+
+  return `
+  <section class="section shell archive" aria-labelledby="archive-title">
+    <p class="label" data-reveal="text" data-copy="events.archive.label">From the archive</p>
+    <h2 class="display-3" id="archive-title" data-reveal="text" data-copy="events.archive.title">Previous events</h2>
+    <p class="prose archive-lede" data-reveal="text" data-copy="events.archive.lede">
+      Years of evenings, trips, talks and seminars — a few of the posters along the way.
+    </p>
+
+    ${editOnly(`<div style="margin-top:var(--space-2)">
+      <button type="button" class="edit-chip" data-edit="archive-add">${icon('plus')} Add posters</button>
+      <button type="button" class="edit-chip" data-edit="archive">${icon('pencil')} Manage posters</button>
+    </div>`)}
+
+    ${posters.length
+      ? `<ul class="poster-wall" data-poster-wall>${posters.map(tile).join('')}</ul>`
+      : emptyState('No posters yet', 'Press "Add posters" and paste Cloudinary links, one per line. Each one goes straight onto the wall.')}
+  </section>`;
+}
+
+/** One poster, opened: the poster large, then whatever was added about it. */
+function openPoster(item) {
+  const media = (item.media ?? []).map((url) => isVideoUrl(url)
+    ? `<video class="poster-detail-media" controls playsinline preload="metadata"><source src="${assetUrl(url)}"></video>`
+    : `<img class="poster-detail-media" src="${assetUrl(url, 1200)}" alt="" loading="lazy" decoding="async">`).join('');
+
+  openModal({
+    title: item.title || 'Previous event',
+    subtitle: item.date || '',
+    className: 'modal--poster',
+    body: `
+      <div class="poster-detail">
+        <img class="poster-detail-poster" src="${assetUrl(item.posterUrl, 1400)}"
+             alt="${esc(item.alt || item.title || 'Event poster')}">
+        <div class="poster-detail-text">
+          ${item.details ? item.details.split(/\n{2,}/).map((para) => `<p>${esc(para)}</p>`).join('') : ''}
+        </div>
+        ${media ? `<div class="poster-detail-gallery">${media}</div>` : ''}
+      </div>`,
   });
 }
+
+function mountArchive() {
+  const wall = $('[data-poster-wall]', app);
+  if (!wall) return;
+  wall.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-poster]');
+    if (!button) return;
+    const item = (state.archive ?? []).find((record) => record.id === button.dataset.poster);
+    if (item) openPoster(item);
+  });
+}
+
+/*
+  "Add posters": a box to paste links into, one per line. Each line becomes
+  its own poster, added to the END of the wall in the order pasted. Nothing
+  else is asked for — details can be added afterwards from "Manage posters".
+*/
+function openArchiveBulkAdd() {
+  openModal({
+    title: 'Add posters',
+    subtitle: 'Paste one Cloudinary link per line. Each becomes a poster on the wall. Add a title and details later from "Manage posters" to make it clickable.',
+    body: `
+      <form class="editor-form" id="archive-add-form">
+        <div class="field">
+          <label for="archive-links">Poster links</label>
+          <textarea id="archive-links" name="links" rows="8"
+                    placeholder="https://res.cloudinary.com/…/poster-one.jpg&#10;https://res.cloudinary.com/…/poster-two.jpg"></textarea>
+          <p class="tiny">${esc(IMAGE_HINT)}</p>
+        </div>
+        <p class="form-status" role="status" aria-live="polite"></p>
+        <div class="editor-actions">
+          <button type="button" class="btn" data-close>Cancel</button>
+          <button type="submit" class="btn btn--primary">Add to the wall</button>
+        </div>
+      </form>`,
+    onMount(host) {
+      const form = $('#archive-add-form', host);
+      const status = $('.form-status', form);
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const links = form.elements.links.value.split('\n').map((line) => line.trim()).filter(Boolean);
+        if (!links.length) { status.textContent = 'Paste at least one link.'; return; }
+        status.dataset.state = '';
+        try {
+          const existing = await load('archive').catch(() => []);
+          let next = existing.reduce((max, item) => Math.max(max, item.order ?? 0), 0);
+          /* One at a time, in order, so the wall keeps the order you pasted. */
+          for (const [index, posterUrl] of links.entries()) {
+            status.textContent = `Adding ${index + 1} of ${links.length}…`;
+            next += 1;
+            await api.post(CACHE_KEYS.archive, { posterUrl, order: next, published: true });
+          }
+          invalidate('archive');
+          closeModal();
+          toast(links.length === 1 ? 'Poster added.' : `${links.length} posters added.`);
+          await renderRoute(window.location.pathname, { restoreScroll: true });
+        } catch (error) {
+          status.dataset.state = 'error';
+          status.textContent = error.message;
+          toast(error.message, 'error');
+        }
+      });
+    },
+  });
+}
+
+
+/* ============================================================== About ===== */
+
+/*
+  THE TIMELINE — past, present and future (with our goals), on the About page.
+
+  One vertical line runs down the middle. As you scroll, a blue line draws
+  itself down over it, and each moment lights up as the line reaches it — so
+  the page reads as moving forward through time. On a desktop the moments
+  alternate left and right of the line; on a phone the line sits at the left
+  and everything stacks.
+
+  The PRESENT is marked with a pulsing dot. FUTURE moments are drawn with a
+  dashed edge — they have not happened yet.
+
+  Every word is placeholder until replaced from "Manage the timeline".
+*/
+const PHASE_LABEL = { Past: 'Where we came from', Present: 'Where we are', Future: 'Where we are going' };
+
+async function renderAbout() {
+  const items = (await load('timeline').catch(() => [])) ?? [];
+  const moments = items
+    .filter((item) => item.published !== false && item.title)
+    .sort((a, b) =>
+      ['Past', 'Present', 'Future'].indexOf(a.phase) - ['Past', 'Present', 'Future'].indexOf(b.phase)
+      || (a.order ?? 0) - (b.order ?? 0));
+
+  let lastPhase = '';
+  const rows = moments.map((item, index) => {
+    const phaseHead = item.phase !== lastPhase
+      ? `<li class="tl-phase" data-phase="${esc(item.phase)}">
+           <p class="label">${esc(item.phase === 'Future' ? 'Future & goals' : item.phase)}</p>
+           <p class="tl-phase-title" data-copy="about.timeline.phase.${esc(item.phase.toLowerCase())}">${esc(PHASE_LABEL[item.phase])}</p>
+         </li>`
+      : '';
+    lastPhase = item.phase;
+    return `${phaseHead}
+      <li class="tl-item" data-tl-item data-phase="${esc(item.phase)}" data-side="${index % 2 ? 'right' : 'left'}">
+        <span class="tl-dot" aria-hidden="true"></span>
+        <article class="tl-card">
+          ${item.when ? `<p class="tl-when">${esc(item.when)}</p>` : ''}
+          <h3 class="tl-title">${esc(item.title)}</h3>
+          ${item.text ? `<p class="tl-text">${esc(item.text)}</p>` : ''}
+          ${item.imageUrl ? `
+          <div class="tl-media">
+            <img src="${assetUrl(item.imageUrl, 900)}" alt="${esc(item.imageAlt)}" loading="lazy" decoding="async">
+          </div>` : ''}
+        </article>
+      </li>`;
+  }).join('');
+
+  return `
+  <main id="main" class="page page--about">
+    <section class="shell page-head" data-hero data-hero-tone="light">
+      <p class="label" data-reveal="text" data-copy="about.label">About us</p>
+      <h1 class="display-1" data-reveal="text" data-copy="about.title">Who we are</h1>
+      <p class="prose" data-reveal="text" data-copy="about.lede">
+        Placeholder — a short paragraph about Edgware Youth: who we are, who we are
+        for, and why we do this. Click to rewrite it in edit mode.
+      </p>
+    </section>
+
+    <section class="section shell timeline-section" aria-labelledby="timeline-title">
+      <p class="label" data-reveal="text" data-copy="about.timeline.label">Our story</p>
+      <h2 class="display-3" id="timeline-title" data-reveal="text" data-copy="about.timeline.title">Past, present and future</h2>
+
+      ${editOnly(`<div style="margin-top:var(--space-2)">
+        <button type="button" class="edit-chip" data-edit="timeline">${icon('pencil')} Manage the timeline</button>
+      </div>`)}
+
+      ${moments.length ? `
+      <div class="timeline" data-timeline>
+        <div class="tl-line" aria-hidden="true"><div class="tl-line-fill" data-tl-fill></div></div>
+        <ol class="tl-list">${rows}</ol>
+      </div>` : emptyState('The timeline is empty', 'Add moments from "Manage the timeline" — each one belongs to the past, the present or the future.')}
+    </section>
+  </main>`;
+}
+
+/*
+  The scroll. Every frame while the page is open: how far down the timeline
+  is the middle of the screen? That fraction is the height of the blue line,
+  and every moment above that point is "lit". It reads the page position
+  directly, so it works the same with the smooth scroller on or off.
+*/
+function mountAbout() {
+  const timeline = $('[data-timeline]', app);
+  if (!timeline) return;
+  const fill = $('[data-tl-fill]', timeline);
+  const items = $$('[data-tl-item]', timeline);
+
+  /* Reduced motion: everything lit, the line full, nothing moves. */
+  if (prefersReducedMotion()) {
+    fill.style.transform = 'scaleY(1)';
+    items.forEach((item) => { item.dataset.lit = 'true'; });
+    return;
+  }
+
+  let frame = 0;
+  let last = -1;
+  const update = () => {
+    frame = requestAnimationFrame(update);
+    const box = timeline.getBoundingClientRect();
+    const marker = window.innerHeight * 0.6;
+    const progress = Math.max(0, Math.min(1, (marker - box.top) / box.height));
+    if (Math.abs(progress - last) < 0.0005) return;
+    last = progress;
+    fill.style.transform = `scaleY(${progress})`;
+    items.forEach((item) => {
+      item.dataset.lit = String(item.getBoundingClientRect().top + 24 < marker);
+    });
+  };
+  update();
+  registerCleanup(() => cancelAnimationFrame(frame));
+}
+
 
 /* ---------------------------------------------------------- Support us --- */
 
@@ -2726,7 +3101,7 @@ const ROUTES = [
   {
     path: '/events', key: 'events', title: 'Events',
     description: 'Everything coming up at Edgware Youth — talks, activities, trips and fundraisers — and everything that has already happened.',
-    render: renderEvents, mount: mountEvents,
+    render: renderEvents, mount: () => { mountEvents(); mountArchive(); },
   },
   {
     /* This one's title, description and picture come from the event itself —
@@ -2738,7 +3113,7 @@ const ROUTES = [
   {
     path: '/about', key: 'about', title: 'About',
     description: 'Who we are: a volunteer-run youth organisation for young Muslims in Edgware, north London.',
-    render: renderAbout,
+    render: renderAbout, mount: mountAbout,
   },
   {
     path: '/support', key: 'support', title: 'Support Us',
@@ -3177,7 +3552,14 @@ function dismissPreloader() {
     panel before it lifts — otherwise the panel slides away to reveal a page
     that is still assembling itself.
   */
-  requestAnimationFrame(() => requestAnimationFrame(lift));
+  /*
+    The logo fills the rest of the way to white first, and the panel lifts
+    the moment it is full (see eyLoader in index.html). Without the fill
+    script, two frames of breathing space instead, so the page is painted
+    underneath before the panel slides away.
+  */
+  if (window.eyLoader) window.eyLoader.finish(lift);
+  else requestAnimationFrame(() => requestAnimationFrame(lift));
 
   /*
     ...and a timer that lifts it regardless.
@@ -3188,7 +3570,7 @@ function dismissPreloader() {
     when they finally switched to it. Whichever of the two fires first wins;
     `lifted` makes sure the second one does nothing.
   */
-  setTimeout(lift, 250);
+  setTimeout(lift, 1500);
 }
 
 
@@ -3478,6 +3860,105 @@ function mountHeroVideo() {
 
   if (document.readyState === 'complete') start();
   else window.addEventListener('load', start, { once: true });
+
+  watchHeroBrightness(hero, video);
+}
+
+/*
+  KEEPING THE TITLE READABLE OVER BRIGHT FOOTAGE.
+
+  The fixed wash (.hero-scrim) is tuned for ordinary footage. Some moments in
+  a film are much brighter — a white title card, a light wall, a stage — and
+  the big white "EDGWARE YOUTH" disappears into them.
+
+  So, many times a second while the film plays, this copies the
+  current frame into a tiny 48×27 picture and measures it, looking only at
+  the part of the screen where the title and the line under it sit. Two
+  things count:
+    - how bright it is on average, and
+    - how much of it is near-white (white lettering in the film itself is
+      the worst case: white on white).
+  The brighter it is, the more the extra dark layer (.hero-dim) fades in.
+  On ordinary footage it stays invisible; it never darkens more than 60%.
+
+  This only works on Cloudinary films. Reading a video's pixels needs the
+  host's permission, which Cloudinary gives; for a film hosted anywhere else
+  the measurement is refused, and the fixed wash alone stays in place.
+*/
+function watchHeroBrightness(hero, video) {
+  const dim = $('[data-hero-dim]', hero);
+  if (!dim || !video.hasAttribute('crossorigin')) return;
+
+  const W = 48;
+  const H = 27;
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const context = canvas.getContext('2d', { willReadFrequently: true });
+  if (!context) return;
+
+  /* 0 below `low`, 1 above `high`, a straight line in between. */
+  const ramp = (value, low, high) => Math.max(0, Math.min(1, (value - low) / (high - low)));
+
+  let last = 0;
+  let stopped = false;
+
+  const measure = () => {
+    if (!video.isConnected) return stop();
+    if (video.readyState < 2) return;
+    try {
+      context.drawImage(video, 0, 0, W, H);
+      /* The top 85%: where the label, the title and the strapline sit. */
+      const { data } = context.getImageData(0, 0, W, Math.round(H * 0.85));
+      let total = 0;
+      let bright = 0;
+      const count = data.length / 4;
+      for (let i = 0; i < data.length; i += 4) {
+        const lum = (0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]) / 255;
+        total += lum;
+        if (lum > 0.72) bright += 1;
+      }
+      const mean = total / count;
+      const share = bright / count;
+      const level = Math.max(ramp(mean, 0.32, 0.55), ramp(share, 0.05, 0.18));
+      /*
+        Darken FAST, lighten SLOWLY. Some bright moments (the title card at
+        the start of the loop) last under half a second, so the dark layer has
+        to arrive almost at once — but easing it away gently stops the hero
+        flickering as the footage changes.
+      */
+      dim.style.transitionDuration = level > last ? '0.12s' : '0.8s';
+      dim.style.opacity = level.toFixed(2);
+      last = level;
+    } catch {
+      /* Not allowed to read this film's pixels: give up quietly. */
+      stop();
+    }
+  };
+
+  /*
+    Measure every other frame the film actually shows, where the browser can
+    tell us when that is (Chrome, Safari, Edge). Anywhere else, ten times a
+    second. Either way it is a 48×27 picture — far too small to cost anything.
+  */
+  let timer = 0;
+  if ('requestVideoFrameCallback' in video) {
+    let odd = false;
+    const onFrame = () => {
+      if (stopped) return;
+      odd = !odd;
+      if (odd) measure();
+      video.requestVideoFrameCallback(onFrame);
+    };
+    video.requestVideoFrameCallback(onFrame);
+  } else {
+    timer = setInterval(() => { if (!video.paused) measure(); }, 100);
+  }
+  /* A jump (the loop restarting, or a seek) is measured straight away. */
+  video.addEventListener('seeked', measure);
+
+  function stop() { stopped = true; clearInterval(timer); }
+  registerCleanup(stop);
 }
 
 /** The "Scroll" cue: clicking it moves the page past the hero. */
@@ -4895,6 +5376,41 @@ const RHYTHM_FIELDS = [
   },
 ];
 
+const WEEKLY_FIELDS = [
+  { name: 'title', label: 'What it is', type: 'text', placeholder: 'Weekly halaqa' },
+  { name: 'day', label: 'Day', type: 'select', options: WEEK_DAYS },
+  { name: 'time', label: 'Time', type: 'text', placeholder: '7.00 – 8.30pm, or After Maghrib' },
+  { name: 'who', label: 'Who it is for', type: 'text', placeholder: 'Brothers 14+, Ages 11–16, Everyone' },
+  { name: 'location', label: 'Where', type: 'text' },
+  { name: 'description', label: 'A line or two about it', type: 'textarea' },
+  { name: 'imageUrl', label: 'Picture (optional)', type: 'text', hint: IMAGE_HINT },
+  { name: 'imageAlt', label: 'What the picture shows', type: 'text', hint: ALT_HINT },
+  { name: 'order', label: 'Order within the day', type: 'number', hint: 'Lowest first, when two things happen on the same day.' },
+  { name: 'published', label: 'Show on the site', type: 'checkbox' },
+];
+
+const ARCHIVE_FIELDS = [
+  { name: 'posterUrl', label: 'Poster', type: 'text', hint: IMAGE_HINT },
+  { name: 'alt', label: 'What the poster says', type: 'text', hint: ALT_HINT },
+  { name: 'title', label: 'Event name (optional)', type: 'text', hint: 'Fill in this, the date, the details or more pictures and the poster becomes clickable.' },
+  { name: 'date', label: 'When (optional)', type: 'text', placeholder: 'March 2023, Ramadan 2022' },
+  { name: 'details', label: 'Details (optional)', type: 'textarea', hint: 'What happened. Leave a blank line between paragraphs.' },
+  { name: 'media', label: 'More pictures or films (optional)', type: 'lines', hint: 'One Cloudinary link per line — photos (.jpg, .png) or films (.mp4).' },
+  { name: 'order', label: 'Order', type: 'number', hint: 'Lowest first on the wall.' },
+  { name: 'published', label: 'Show on the site', type: 'checkbox' },
+];
+
+const TIMELINE_FIELDS = [
+  { name: 'phase', label: 'Past, present or future', type: 'select', options: ['Past', 'Present', 'Future'] },
+  { name: 'when', label: 'When', type: 'text', placeholder: '2016, Today, By 2028' },
+  { name: 'title', label: 'Title', type: 'text' },
+  { name: 'text', label: 'What happened, or the goal', type: 'textarea' },
+  { name: 'imageUrl', label: 'Picture (optional)', type: 'text', hint: IMAGE_HINT },
+  { name: 'imageAlt', label: 'What the picture shows', type: 'text', hint: ALT_HINT },
+  { name: 'order', label: 'Order', type: 'number', hint: 'Lowest first, within its part of the timeline.' },
+  { name: 'published', label: 'Show on the site', type: 'checkbox' },
+];
+
 const CLIP_FIELDS = [
   { name: 'title', label: 'Clip title', type: 'text' },
   {
@@ -5119,6 +5635,36 @@ function mountEditHandlers() {
       subtitle: 'The rows in the table on What We Do, top to bottom. The menu counts these too.',
     }),
 
+    weekly: () => openCollectionManager({
+      title: 'The week',
+      endpoint: CACHE_KEYS.weekly,
+      cacheKey: 'weekly',
+      fields: WEEKLY_FIELDS,
+      label: (item) => `${item.day} — ${item.title || item.id}`,
+      subtitle: 'Everything that happens every week. Shown on the Events page and on What We Do.',
+    }),
+
+    archive: () => openCollectionManager({
+      title: 'Previous events',
+      endpoint: CACHE_KEYS.archive,
+      cacheKey: 'archive',
+      fields: ARCHIVE_FIELDS,
+      label: (item) => item.title || item.date || 'Poster (no details yet)',
+      subtitle: 'The poster wall at the bottom of Events. Add a title or details to make a poster clickable.',
+      reorder: true,
+    }),
+
+    'archive-add': () => openArchiveBulkAdd(),
+
+    timeline: () => openCollectionManager({
+      title: 'The timeline',
+      endpoint: CACHE_KEYS.timeline,
+      cacheKey: 'timeline',
+      fields: TIMELINE_FIELDS,
+      label: (item) => `${item.phase} — ${item.title || item.id}`,
+      subtitle: 'Past, present and future on the About page. Each moment belongs to one of the three.',
+    }),
+
     rhythm: () => openSettingsEditor({
       title: 'The weekly rhythm',
       subtitle: 'The list under the table. One line per session: the day, the time, and what happens — separated by a bar.',
@@ -5242,6 +5788,7 @@ async function boot() {
     and skipped entirely on a phone, where it costs nothing and saves 117 KiB.
   */
   await loadMotionLibraries();
+  window.eyLoader?.to(0.3);   // the loading logo's white fill — see index.html
 
   setupGsap();
   mountLenis();
@@ -5257,6 +5804,7 @@ async function boot() {
   } catch {
     state.copy = {};
   }
+  window.eyLoader?.to(0.45);
 
   /*
     The footer needs the contact email and social links, and the menu needs the
@@ -5269,6 +5817,7 @@ async function boot() {
     load('events').catch(() => { state.events = []; }),
     load('programmes').catch(() => { state.programmes = []; }),
   ]);
+  window.eyLoader?.to(0.7);
 
   /* Ask the server whether we are already logged in (the cookie is httpOnly,
      so the page genuinely cannot tell on its own). */
@@ -5280,6 +5829,7 @@ async function boot() {
     setAuthed(false);
   }
 
+  window.eyLoader?.to(0.8);
   await renderRoute(window.location.pathname);
 
   /* The page is built and painted — lift the blue panel off it. */
